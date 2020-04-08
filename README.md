@@ -10,4 +10,17 @@ Clone it to find a collection of:
  - DL Modules
  - A Plotter Object
  
- 
+ ###Notes:
+ - Use directory links to link from your main project folder to the ml_lib folder. Pycharm will automatically use 
+ included packages.
+    \
+    \
+    For Windows Users:
+    ```
+     mklink /d "ml_lib" "..\ml_lib""
+    ```
+    For Unix User:
+    ```
+    TBA
+    ```
+  - Cheers

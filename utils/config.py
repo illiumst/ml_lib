@@ -31,9 +31,7 @@ class Config(ConfigParser):
 
     @property
     def model_class(self):
-        model_dict = dict(ConvHomDetector=ConvHomDetector,
-                          CNNRouteGenerator=CNNRouteGeneratorModel,
-                          CNNRouteGeneratorDiscriminated=CNNRouteGeneratorDiscriminated
+        model_dict = dict(BinaryClassifier=BinaryClassifier,
                           )
         try:
             return model_dict[self.get('model', 'type')]
@@ -105,6 +103,14 @@ class Config(ConfigParser):
         new_config = cls()
         new_config.read_dict(sorted_dict)
         return new_config
+
+    def build_model(self):
+        return self.model_class(self.model_paramters)
+
+    def build_and_init_model(self, weight_init_function):
+        model = self.build_model()
+        model.init_weights(weight_init_function)
+        return model
 
     def update(self, mapping):
         sorted_dict = self._sort_combined_section_key_mapping(mapping)

@@ -9,6 +9,9 @@ Clone it to find a collection of:
  - Utility Function for Model I/O
  - DL Modules
  - A Plotter Object
+ - Audio Related Tools and Funtion
+   - Librosa
+   - Scipy Signal
  
  ###Notes:
  - Use directory links to link from your main project folder to the ml_lib folder. Pycharm will automatically use 

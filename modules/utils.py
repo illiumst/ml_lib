@@ -11,8 +11,16 @@ import pytorch_lightning as pl
 
 # Utility - Modules
 ###################
+class F_x(object):
+    def __init__(self):
+        pass
+
+    def __call__(self, x):
+        return x
 
 
+# Utility - Modules
+###################
 class Flatten(nn.Module):
 
     @property

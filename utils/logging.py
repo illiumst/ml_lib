@@ -37,8 +37,8 @@ class Logger(LightningLoggerBase):
 
     @property
     def outpath(self):
-        # ToDo: Add further path modification such as dataset config etc.
-        return Path(self.config.train.outpath) / self.config.data.mode
+        # FIXME: Move this out of here, this is not the right place to do this!!!
+        return Path(self.config.train.outpath) / self.config.model.type
 
     def __init__(self, config: Config):
         """

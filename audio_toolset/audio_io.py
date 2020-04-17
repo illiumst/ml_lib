@@ -3,12 +3,13 @@ import torch
 from scipy.signal import butter, lfilter
 
 from ml_lib.modules.utils import AutoPad
-
+import numpy as np
 
 def butter_lowpass(cutoff, sr, order=5):
     nyq = 0.5 * sr
     normal_cutoff = cutoff / nyq
-    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    # noinspection PyTupleAssignmentBalance
+    b, a = butter(order, normal_cutoff, btype='low', analog=False, output='ba')
     return b, a
 
 
@@ -57,18 +58,19 @@ class NormalizeMelband(object):
         return x
 
 
-class AutoPadTransform(object):
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-        self.padder = AutoPad()
+class AutoPadToShape(object):
+    def __init__(self, shape):
+        self.shape = shape
 
-    def __call__(self, y):
-        if not torch.is_tensor(y):
-            y = torch.as_tensor(y)
-        return self.padder(y)
+    def __call__(self, x):
+        if not torch.is_tensor(x):
+            x = torch.as_tensor(x)
+        embedding = torch.zeros(self.shape)
+        embedding[: x.shape] = x
+        return embedding
 
     def __repr__(self):
-        return 'AutoPadTransform()'
+        return f'AutoPadTransform({self.shape})'
 
 
 class Melspectogram(object):

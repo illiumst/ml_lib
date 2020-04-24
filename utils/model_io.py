@@ -1,4 +1,5 @@
 from argparse import Namespace
+from collections import Mapping
 from pathlib import Path
 
 import torch
@@ -7,7 +8,19 @@ from torch import nn
 
 
 # Hyperparamter Object
-class ModelParameters(Namespace):
+class ModelParameters(Mapping, Namespace):
+
+    def __getitem__(self, k):
+        # k: _KT -> _VT_co
+        return self.__dict__[k]
+
+    def __len__(self):
+        # -> int
+        return len(self.__dict__.keys())
+
+    def __iter__(self):
+        # -> Iterator[_T_co]
+        return iter(list(self.__dict__.keys()))
 
     _activations = dict(
         leaky_relu=nn.LeakyReLU,

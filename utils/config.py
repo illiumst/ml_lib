@@ -7,7 +7,6 @@ from configparser import ConfigParser
 from pathlib import Path
 
 from ml_lib.utils.model_io import ModelParameters
-from ml_lib.utils.transforms import AsArray
 
 
 def is_jsonable(x):
@@ -116,7 +115,7 @@ class Config(ConfigParser, ABC):
     def build_model(self):
         return self.model_class(self.model_paramters)
 
-    def build_and_init_model(self, in_shape, weight_init_function):
+    def build_and_init_model(self, weight_init_function):
         model = self.build_model()
         model.init_weights(weight_init_function)
         return model

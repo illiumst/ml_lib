@@ -19,7 +19,7 @@ class ConvModule(nn.Module):
         return output.shape[1:]
 
     def __init__(self, in_shape, conv_filters, conv_kernel, activation: nn.Module = nn.ELU, pooling_size=None,
-                 use_bias=True, use_norm=False, dropout: Union[int, float] = 0,
+                 bias=True, norm=False, dropout: Union[int, float] = 0,
                  conv_class=nn.Conv2d, conv_stride=1, conv_padding=0, **kwargs):
         super(ConvModule, self).__init__()
         warnings.warn(f'The following arguments have been ignored: \n {list(kwargs.keys())}')
@@ -37,14 +37,13 @@ class ConvModule(nn.Module):
         # Modules
         self.dropout = nn.Dropout2d(dropout) if dropout else lambda x: x
         self.pooling = nn.MaxPool2d(pooling_size) if pooling_size else lambda x: x
-        self.norm = nn.BatchNorm2d(in_channels, eps=1e-04) if use_norm else lambda x: x
-        self.conv = conv_class(in_channels, self.conv_filters, self.conv_kernel, bias=use_bias,
+        self.norm = nn.BatchNorm2d(in_channels, eps=1e-04) if norm else lambda x: x
+        self.conv = conv_class(in_channels, self.conv_filters, self.conv_kernel, bias=bias,
                                padding=self.padding, stride=self.stride
                                )
 
     def forward(self, x):
         x = self.norm(x)
-
         tensor = self.conv(x)
         tensor = self.dropout(tensor)
         tensor = self.pooling(tensor)
@@ -63,7 +62,7 @@ class DeConvModule(nn.Module):
     def __init__(self, in_shape, conv_filters, conv_kernel, conv_stride=1, conv_padding=0,
                  dropout: Union[int, float] = 0, autopad=0,
                  activation: Union[None, nn.Module] = nn.ReLU, interpolation_scale=0,
-                 use_bias=True, use_norm=False):
+                 bias=True, norm=False):
         super(DeConvModule, self).__init__()
         in_channels, height, width = in_shape[0], in_shape[1], in_shape[2]
         self.padding = conv_padding
@@ -74,9 +73,9 @@ class DeConvModule(nn.Module):
 
         self.autopad = AutoPad() if autopad else lambda x: x
         self.interpolation = Interpolate(scale_factor=interpolation_scale) if interpolation_scale else lambda x: x
-        self.norm = nn.BatchNorm2d(in_channels, eps=1e-04) if use_norm else lambda x: x
+        self.norm = nn.BatchNorm2d(in_channels, eps=1e-04) if norm else lambda x: x
         self.dropout = nn.Dropout2d(dropout) if dropout else lambda x: x
-        self.de_conv = nn.ConvTranspose2d(in_channels, self.conv_filters, self.conv_kernel, bias=use_bias,
+        self.de_conv = nn.ConvTranspose2d(in_channels, self.conv_filters, self.conv_kernel, bias=bias,
                                           padding=self.padding, stride=self.stride)
 
         self.activation = activation() if activation else lambda x: x
@@ -127,16 +126,16 @@ class RecurrentModule(nn.Module):
         output = self(x)
         return output.shape[1:]
 
-    def __init__(self, in_shape, hidden_size, num_layers=1, cell_type=nn.GRU, use_bias=True, dropout=0):
+    def __init__(self, in_shape, hidden_size, num_layers=1, cell_type=nn.GRU, bias=True, dropout=0):
         super(RecurrentModule, self).__init__()
-        self.use_bias = use_bias
+        self.bias = bias
         self.num_layers = num_layers
         self.in_shape = in_shape
         self.hidden_size = hidden_size
         self.dropout = dropout
         self.rnn = cell_type(self.in_shape[-1] * self.in_shape[-2], hidden_size,
                              num_layers=num_layers,
-                             bias=self.use_bias,
+                             bias=self.bias,
                              batch_first=True,
                              dropout=self.dropout)
 

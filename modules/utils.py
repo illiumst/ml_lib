@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from abc import ABC
 from pathlib import Path
 
@@ -109,7 +111,7 @@ class LightningBaseModule(pl.LightningModule, ABC):
 
     def __init__(self, hparams):
         super(LightningBaseModule, self).__init__()
-        self.hparams = hparams
+        self.hparams = deepcopy(hparams)
 
         # Data loading
         # =============================================================================

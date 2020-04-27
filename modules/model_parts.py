@@ -61,7 +61,7 @@ class Generator(nn.Module):
         self.deconv4 = DeConvModule(self.deconv3.shape, conv_filters=out_channels,
                                     conv_kernel=3,
                                     conv_padding=1,
-                                    # normalize=use_norm,
+                                    # normalize=norm,
                                     activation=self.out_activation
                                     )
 

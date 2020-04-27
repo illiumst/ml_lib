@@ -66,6 +66,7 @@ class Config(ConfigParser, ABC):
     @property
     def project(self):
         return self._get_namespace_for_section('project')
+
     ###################################################
 
     @property

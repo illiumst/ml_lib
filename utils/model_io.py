@@ -10,6 +10,21 @@ from torch import nn
 # Hyperparamter Object
 class ModelParameters(Mapping, Namespace):
 
+    @property
+    def module_paramters(self):
+        paramter_mapping = dict()
+        paramter_mapping.update(self.model_param.__dict__)
+
+        paramter_mapping.update(
+            dict(
+                activation=self._activations[paramter_mapping['activation']]
+            )
+        )
+
+        del paramter_mapping['in_shape']
+
+        return paramter_mapping
+
     def __getitem__(self, k):
         # k: _KT -> _VT_co
         return self.__dict__[k]
@@ -21,6 +36,10 @@ class ModelParameters(Mapping, Namespace):
     def __iter__(self):
         # -> Iterator[_T_co]
         return iter(list(self.__dict__.keys()))
+
+    def __delitem__(self, key):
+        self.__dict__.__delitem__(key)
+        return True
 
     _activations = dict(
         leaky_relu=nn.LeakyReLU,

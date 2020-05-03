@@ -1,3 +1,4 @@
+from abc import ABC
 from pathlib import Path
 
 from pytorch_lightning.loggers.base import LightningLoggerBase
@@ -5,10 +6,9 @@ from pytorch_lightning.loggers.neptune import NeptuneLogger
 from pytorch_lightning.loggers.test_tube import TestTubeLogger
 
 from ml_lib.utils.config import Config
-import numpy as np
 
 
-class Logger(LightningLoggerBase):
+class Logger(LightningLoggerBase, ABC):
 
     media_dir = 'media'
 
@@ -29,7 +29,7 @@ class Logger(LightningLoggerBase):
 
     @property
     def project_name(self):
-        return f"{self.config.project.owner}/{self.config.project.name}"
+        return f"{self.config.project.owner}/{self.config.project.name.replace('_', '-')}"
 
     @property
     def version(self):
@@ -37,8 +37,7 @@ class Logger(LightningLoggerBase):
 
     @property
     def outpath(self):
-        # FIXME: Move this out of here, this is not the right place to do this!!!
-        return Path(self.config.train.outpath) / self.config.model.type
+        raise NotImplementedError
 
     def __init__(self, config: Config):
         """

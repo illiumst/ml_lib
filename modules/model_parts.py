@@ -4,6 +4,8 @@
 import torch
 from torch import nn
 
+from ml_lib.modules.utils import ShapeMixin
+
 
 class Generator(nn.Module):
     @property
@@ -112,12 +114,7 @@ class UnitGenerator(Generator):
         return tensor
 
 
-class BaseEncoder(nn.Module):
-    @property
-    def shape(self):
-        x = torch.randn(self.in_shape).unsqueeze(0)
-        output = self(x)
-        return output.shape[1:]
+class BaseEncoder(ShapeMixin, nn.Module):
 
     # noinspection PyUnresolvedReferences
     def __init__(self, in_shape, lat_dim=256, use_bias=True, use_norm=False, dropout: Union[int, float] = 0,

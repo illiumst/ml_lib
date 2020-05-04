@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from abc import ABC
 from pathlib import Path
 
@@ -22,6 +20,15 @@ class F_x(object):
 
     def __call__(self, x):
         return x
+
+
+class ShapeMixin:
+
+    @property
+    def shape(self):
+        x = torch.randn(self.in_shape).unsqueeze(0)
+        output = self(x)
+        return output.shape[1:]
 
 
 # Utility - Modules
@@ -100,7 +107,7 @@ class LightningBaseModule(pl.LightningModule, ABC):
 
     @classmethod
     def name(cls):
-        raise NotImplementedError('Give your model a name!')
+        return cls.__name__
 
     @property
     def shape(self):
@@ -218,3 +225,62 @@ class FlipTensor(nn.Module):
         idx = torch.as_tensor(idx).long()
         inverted_tensor = x.index_select(self.dim, idx)
         return inverted_tensor
+
+
+class AutoPadToShape(object):
+    def __init__(self, shape):
+        self.shape = shape
+
+    def __call__(self, x):
+        if not torch.is_tensor(x):
+            x = torch.as_tensor(x)
+        if x.shape == self.shape:
+            return x
+        embedding = torch.zeros(self.shape)
+        embedding[: x.shape] = x
+        return embedding
+
+    def __repr__(self):
+        return f'AutoPadTransform({self.shape})'
+
+
+class HorizontalSplitter(nn.Module):
+
+    def __init__(self, in_shape, n):
+        super(HorizontalSplitter, self).__init__()
+        assert len(in_shape) == 3
+        self.n = n
+        self.in_shape = in_shape
+
+        self.channel, self.height, self.width = self.in_shape
+        self.new_height = (self.height // self.n_horizontal_splits) + 1 if self.height % self.n != 0 else 0
+
+        self.shape = (self.channel, self.new_height, self.width)
+        self.autopad = AutoPadToShape(self.shape)
+
+    def foward(self, x):
+        n_blocks = list()
+        for block_idx in range(self.n):
+            start = (self.channel, block_idx * self.height, self.width)
+            end = (self.channel, (block_idx + 1) * self.height, self.width)
+            block = self.autopad(x[start:end])
+            n_blocks.append(block)
+
+        return tuple(n_blocks)
+
+
+class HorizontalMerger(nn.Module):
+
+    @property
+    def shape(self):
+        merged_shape = self.in_shape[0], self.in_shape[1] * self.n, self.in_shape[2]
+        return merged_shape
+
+    def __init__(self, in_shape, n):
+        super(HorizontalMerger, self).__init__()
+        assert len(in_shape) == 3
+        self.n = n
+        self.in_shape = in_shape
+
+    def forward(self, x):
+        return torch.cat(x, dim=-2)

@@ -27,7 +27,7 @@ class ShapeMixin:
     @property
     def shape(self):
         x = torch.randn(self.in_shape).unsqueeze(0)
-        output = self(x)
+        output: torch.Tensor = self(x)
         return output.shape[1:]
 
 
@@ -234,10 +234,10 @@ class AutoPadToShape(object):
     def __call__(self, x):
         if not torch.is_tensor(x):
             x = torch.as_tensor(x)
-        if x.shape == self.shape:
+        if x.shape[1:] == self.shape:
             return x
-        embedding = torch.zeros(self.shape)
-        embedding[: x.shape] = x
+        embedding = torch.zeros((x.shape[0], *self.shape), device='cuda' if x.is_cuda else'cpu')
+        embedding[:, :x.shape[1], :x.shape[2], :x.shape[3]] = x
         return embedding
 
     def __repr__(self):
@@ -253,20 +253,20 @@ class HorizontalSplitter(nn.Module):
         self.in_shape = in_shape
 
         self.channel, self.height, self.width = self.in_shape
-        self.new_height = (self.height // self.n_horizontal_splits) + 1 if self.height % self.n != 0 else 0
+        self.new_height = (self.height // self.n) + 1 if self.height % self.n != 0 else 0
 
         self.shape = (self.channel, self.new_height, self.width)
         self.autopad = AutoPadToShape(self.shape)
 
-    def foward(self, x):
+    def forward(self, x):
         n_blocks = list()
         for block_idx in range(self.n):
-            start = (self.channel, block_idx * self.height, self.width)
-            end = (self.channel, (block_idx + 1) * self.height, self.width)
-            block = self.autopad(x[start:end])
+            start = block_idx * self.new_height
+            end = (block_idx + 1) * self.new_height
+            block = self.autopad(x[:, :, start:end, :])
             n_blocks.append(block)
 
-        return tuple(n_blocks)
+        return n_blocks
 
 
 class HorizontalMerger(nn.Module):

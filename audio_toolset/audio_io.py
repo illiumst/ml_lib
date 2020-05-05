@@ -1,15 +1,13 @@
 import librosa
-from librosa import display
 import torch
 from scipy.signal import butter, lfilter
 
-from ml_lib.modules.utils import AutoPad
 import numpy as np
 
 
-def scale_minmax(x, min=0.0, max=1.0):
+def scale_minmax(x, min_val=0.0, max_val=1.0):
     x_std = (x - x.min()) / (x.max() - x.min())
-    x_scaled = x_std * (max - min) + min
+    x_scaled = x_std * (max_val - min_val) + min_val
     return x_scaled
 
 

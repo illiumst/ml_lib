@@ -1,14 +1,17 @@
 from typing import Union
+
+import torch
 import warnings
 
 from torch import nn
 from ml_lib.modules.utils import AutoPad, Interpolate, ShapeMixin
 
+DEVICE = torch.cuda.is_available()
+
 
 #
 # Sub - Modules
 ###################
-
 class ConvModule(ShapeMixin, nn.Module):
 
     def __init__(self, in_shape, conv_filters, conv_kernel, activation: nn.Module = nn.ELU, pooling_size=None,

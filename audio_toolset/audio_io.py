@@ -1,5 +1,4 @@
 import librosa
-import torch
 from scipy.signal import butter, lfilter
 
 import numpy as np
@@ -36,31 +35,34 @@ class MFCC(object):
 
 class NormalizeLocal(object):
     def __init__(self):
-        self.cache: torch.Tensor
+        self.cache: np.ndarray
         pass
 
-    def __call__(self, x: torch.Tensor):
+    def __call__(self, x: np.ndarray):
         mean = x.mean()
-        std = x.std()
+        std = x.std() + 0.0001
 
-        x = x.__sub__(mean).__div__(std)
-        x[torch.isnan(x)] = 0
-        x[torch.isinf(x)] = 0
+        # Pytorch Version:
+        # x = x.__sub__(mean).__div__(std)
+        # Numpy Version
+        x = (x - mean) / std
+        x[np.isnan(x)] = 0
+        x[np.isinf(x)] = 0
         return x
 
 
 class NormalizeMelband(object):
     def __init__(self):
-        self.cache: torch.Tensor
+        self.cache: np.ndarray
         pass
 
-    def __call__(self, x: torch.Tensor):
+    def __call__(self, x: np.ndarray):
         mean = x.mean(-1).unsqueeze(-1)
         std = x.std(-1).unsqueeze(-1)
 
         x = x.__sub__(mean).__div__(std)
-        x[torch.isnan(x)] = 0
-        x[torch.isinf(x)] = 0
+        x[np.isnan(x)] = 0
+        x[np.isinf(x)] = 0
         return x
 
 

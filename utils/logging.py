@@ -25,7 +25,7 @@ class Logger(LightningLoggerBase, ABC):
 
     @property
     def name(self):
-        return self.config.model.type
+        return self.config.name
 
     @property
     def project_name(self):
@@ -37,7 +37,11 @@ class Logger(LightningLoggerBase, ABC):
 
     @property
     def outpath(self):
-        raise NotImplementedError
+        return Path(self.config.train.outpath) / self.config.model.type
+
+    @property
+    def exp_path(self):
+        return Path(self.outpath) / self.name
 
     def __init__(self, config: Config):
         """
@@ -58,10 +62,12 @@ class Logger(LightningLoggerBase, ABC):
         self._testtube_kwargs = dict(save_dir=self.outpath, version=self.version, name=self.name)
         self._neptune_kwargs = dict(offline_mode=self.debug,
                                     api_key=self.config.project.neptune_key,
+                                    experiment_name=self.name,
                                     project_name=self.project_name,
                                     upload_source_files=list())
         self.neptunelogger = NeptuneLogger(**self._neptune_kwargs)
         self.testtubelogger = TestTubeLogger(**self._testtube_kwargs)
+        self.log_config_as_ini()
 
     def log_hyperparams(self, params):
         self.neptunelogger.log_hyperparams(params)
@@ -80,6 +86,10 @@ class Logger(LightningLoggerBase, ABC):
     def log_config_as_ini(self):
         self.config.write(self.log_dir / 'config.ini')
 
+    def log_text(self, name, text, step_nb=0, **kwargs):
+        # TODO Implement Offline variant.
+        self.neptunelogger.log_text(name, text, step_nb)
+
     def log_metric(self, metric_name, metric_value, **kwargs):
         self.testtubelogger.log_metrics(dict(metric_name=metric_value))
         self.neptunelogger.log_metric(metric_name, metric_value, **kwargs)
@@ -97,7 +107,6 @@ class Logger(LightningLoggerBase, ABC):
     def finalize(self, status):
         self.testtubelogger.finalize(status)
         self.neptunelogger.finalize(status)
-        self.log_config_as_ini()
 
     def __enter__(self):
         return self

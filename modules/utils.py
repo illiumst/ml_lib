@@ -4,7 +4,6 @@ from pathlib import Path
 import torch
 from torch import nn
 from torch import functional as F
-from torch.utils.data import DataLoader
 
 import pytorch_lightning as pl
 
@@ -14,25 +13,26 @@ import pytorch_lightning as pl
 from ml_lib.utils.model_io import ModelParameters
 
 
-class F_x(object):
-    def __init__(self):
-        pass
-
-    def __call__(self, x):
-        return x
-
-
 class ShapeMixin:
 
     @property
     def shape(self):
-        try:
-            x = torch.randn(self.in_shape).unsqueeze(0)
-            output = self(x)
-            return output.shape[1:] if len(output.shape[1:]) > 1 else output.shape[-1]
-        except Exception as e:
-            print(e)
-            return -1
+        assert isinstance(self, (LightningBaseModule, nn.Module))
+
+        x = torch.randn(self.in_shape)
+        # This is needed for BatchNorm shape checking
+        x = torch.stack((x, x))
+        output = self(x)
+        return output.shape[1:] if len(output.shape[1:]) > 1 else output.shape[-1]
+
+
+class F_x(ShapeMixin, nn.Module):
+    def __init__(self, in_shape):
+        super(F_x, self).__init__()
+        self.in_shape = in_shape
+
+    def forward(self, x):
+        return x
 
 
 # Utility - Modules
@@ -128,9 +128,6 @@ class LightningBaseModule(pl.LightningModule, ABC):
     def size(self):
         return self.shape
 
-    def _move_to_model_device(self, x):
-        return x.cuda() if next(self.parameters()).is_cuda else x.cpu()
-
     def save_to_disk(self, model_path):
         Path(model_path, exist_ok=True).mkdir(parents=True, exist_ok=True)
         if not (model_path / 'model_class.obj').exists():
@@ -207,7 +204,7 @@ class AutoPadToShape(object):
             x = torch.as_tensor(x)
         if x.shape[1:] == self.shape:
             return x
-        embedding = torch.zeros((x.shape[0], *self.shape), device='cuda' if x.is_cuda else'cpu')
+        embedding = torch.zeros((x.shape[0], *self.shape))
         embedding[:, :x.shape[1], :x.shape[2], :x.shape[3]] = x
         return embedding
 

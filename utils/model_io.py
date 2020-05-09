@@ -18,18 +18,11 @@ class ModelParameters(Namespace, Mapping):
 
         paramter_mapping.update(
             dict(
-                activation=self._activations[paramter_mapping['activation']]
+                activation=self._activations[self['activation']]
             )
         )
 
         return paramter_mapping
-
-    @property
-    def test_activation(self):
-        try:
-            return self._activations[self.model.activation]
-        except KeyError:
-            return nn.ReLU
 
     def __getitem__(self, k):
         # k: _KT -> _VT_co

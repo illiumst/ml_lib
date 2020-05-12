@@ -10,7 +10,8 @@ class Speed(object):
 
     def __call__(self, x):
         start = int(np.random.randint(0, x.shape[-1],1))
-        end = min(int((np.random.uniform(0, self.max_ratio, 1) * x.shape[-1]) + start), x.shape[-1])
+        end = int((np.random.uniform(0, self.max_ratio, 1) * x.shape[-1]) + start)
+        end = min(end, x.shape[-1])
         try:
             speed_factor = float(np.random.uniform(min(self.speed_factor, 1), max(self.speed_factor, 1), 1))
             aug_data = librosa.effects.time_stretch(x[start:end], speed_factor)

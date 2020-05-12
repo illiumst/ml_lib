@@ -18,12 +18,14 @@ class ShapeMixin:
     @property
     def shape(self):
         assert isinstance(self, (LightningBaseModule, nn.Module))
-
-        x = torch.randn(self.in_shape)
-        # This is needed for BatchNorm shape checking
-        x = torch.stack((x, x))
-        output = self(x)
-        return output.shape[1:] if len(output.shape[1:]) > 1 else output.shape[-1]
+        if self.in_shape is not None:
+            x = torch.randn(self.in_shape)
+            # This is needed for BatchNorm shape checking
+            x = torch.stack((x, x))
+            output = self(x)
+            return output.shape[1:] if len(output.shape[1:]) > 1 else output.shape[-1]
+        else:
+            return -1
 
 
 class F_x(ShapeMixin, nn.Module):

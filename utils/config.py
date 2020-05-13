@@ -105,6 +105,7 @@ class Config(ConfigParser, ABC):
         params.update(self.train.__dict__)
         assert all(key not in list(params.keys()) for key in self.data.__dict__)
         params.update(self.data.__dict__)
+        params.update(version=self.version)
         params.update(exp_path=str(self.exp_path), exp_fingerprint=str(self.fingerprint))
         return params
 

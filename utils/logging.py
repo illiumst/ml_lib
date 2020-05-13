@@ -64,7 +64,7 @@ class Logger(LightningLoggerBase, ABC):
                                     api_key=self.config.project.neptune_key,
                                     experiment_name=self.name,
                                     project_name=self.project_name,
-                                    upload_source_files=list())
+                                    params=self.config.model_paramters)
         self.neptunelogger = NeptuneLogger(**self._neptune_kwargs)
         self.testtubelogger = TestTubeLogger(**self._testtube_kwargs)
         self.log_config_as_ini()

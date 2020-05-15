@@ -9,6 +9,8 @@ class Speed(object):
         self.max_ratio = max_ratio
 
     def __call__(self, x):
+        if not all([self.speed_factor, self.max_ratio]):
+            return x
         start = int(np.random.randint(0, x.shape[-1],1))
         end = int((np.random.uniform(0, self.max_ratio, 1) * x.shape[-1]) + start)
         end = min(end, x.shape[-1])

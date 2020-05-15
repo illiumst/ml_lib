@@ -14,8 +14,10 @@ class Plotter(object):
         if naked:
             plt.axis('off')
             fig.savefig(path, bbox_inches='tight', transparent=True, pad_inches=0)
-        fig.savefig(path)
-        fig.clf()
+            fig.clf()
+        else:
+            fig.savefig(path)
+            fig.clf()
 
     def show_current_figure(self):
         fig, _ = plt.gcf(), plt.gca()

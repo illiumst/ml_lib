@@ -13,8 +13,8 @@ class NoiseInjection(object):
 
     def __call__(self, x: np.ndarray):
         if self.noise_factor:
-            noise = np.random.normal(loc=self.mu, scale=self.sigma, size=x.shape)
-            augmented_data = x + self.noise_factor * noise
+            noise = np.random.uniform(0, self.noise_factor, size=x.shape)
+            augmented_data = x + x * noise
             # Cast back to same data type
             augmented_data = augmented_data.astype(x.dtype)
             return augmented_data

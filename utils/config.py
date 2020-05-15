@@ -39,6 +39,7 @@ class Config(ConfigParser, ABC):
         h = hashlib.md5()
         params = deepcopy(self.as_dict)
         del params['model']['type']
+        del params['model']['secondary_type']
         del params['data']['worker']
         del params['main']
         h.update(str(params).encode())

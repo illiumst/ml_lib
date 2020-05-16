@@ -44,7 +44,13 @@ class ModelParameters(Namespace, Mapping):
         if name == 'activation':
             return self._activations[self['activation']]
         else:
-            return super(ModelParameters, self).__getattribute__(name)
+            try:
+                return super(ModelParameters, self).__getattribute__(name)
+            except AttributeError as e:
+                if name == 'stretch':
+                    return False
+                else:
+                    raise AttributeError(e)
 
     _activations = dict(
         leaky_relu=nn.LeakyReLU,

@@ -4,7 +4,7 @@
 import torch
 from torch import nn
 
-from ml_lib.modules.utils import ShapeMixin
+from modules.utils import ShapeMixin
 
 
 class Generator(nn.Module):

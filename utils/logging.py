@@ -5,7 +5,7 @@ from pytorch_lightning.loggers.base import LightningLoggerBase
 from pytorch_lightning.loggers.neptune import NeptuneLogger
 from pytorch_lightning.loggers.test_tube import TestTubeLogger
 
-from ml_lib.utils.config import Config
+from utils.config import Config
 
 
 class Logger(LightningLoggerBase, ABC):

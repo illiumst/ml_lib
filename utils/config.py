@@ -70,7 +70,8 @@ class Config(ConfigParser, ABC):
         try:
             return self._model_map[self.model.type]
         except KeyError:
-            raise KeyError(rf'The model alias you provided ("{self.get("model", "type")}") does not exist! Try one of these: {list(self._model_map.keys())}')
+            raise KeyError(f'The model alias you provided ("{self.get("model", "type")}")' +
+                           'does not exist! Try one of these: {list(self._model_map.keys())}')
 
     # TODO: Do this programmatically; This did not work:
     # Initialize Default Sections as Property

@@ -10,7 +10,7 @@ import pytorch_lightning as pl
 
 # Utility - Modules
 ###################
-from ml_lib.utils.model_io import ModelParameters
+from utils.model_io import ModelParameters
 
 
 class ShapeMixin:

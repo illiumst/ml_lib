@@ -1,5 +1,3 @@
-from ctypes import Union
-
 import numpy as np
 
 

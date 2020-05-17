@@ -5,7 +5,7 @@ import warnings
 
 from torch import nn
 
-from ml_lib.modules.utils import AutoPad, Interpolate, ShapeMixin, F_x, Flatten
+from modules.utils import AutoPad, Interpolate, ShapeMixin, F_x, Flatten
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

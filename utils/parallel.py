@@ -23,3 +23,5 @@ def run_n_in_parallel(f, n, processes=0, **kwargs):
         p.join()
 
     return results
+
+raise NotImplementedError()

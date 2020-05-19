@@ -39,10 +39,15 @@ class Config(ConfigParser, ABC):
         h = hashlib.md5()
         params = deepcopy(self.as_dict)
         del params['model']['type']
-        del params['model']['secondary_type']
         del params['data']['worker']
         del params['main']
-        h.update(str(params).encode())
+        del params['project']
+        # Flatten the dict of dicts
+        for section in list(params.keys()):
+            params.update({f'{section}_{key}': val for key, val in params[section].items()})
+            del params[section]
+        _, vals = zip(*sorted(params.items(), key=lambda tup: tup[0]))
+        h.update(str(vals).encode())
         fingerprint = h.hexdigest()
         return fingerprint
 

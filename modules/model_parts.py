@@ -4,7 +4,7 @@
 import torch
 from torch import nn
 
-from modules.utils import ShapeMixin
+from .util import ShapeMixin
 
 
 class Generator(nn.Module):

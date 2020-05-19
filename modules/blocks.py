@@ -1,11 +1,13 @@
+from pathlib import Path
 from typing import Union
 
 import torch
 import warnings
 
 from torch import nn
-
-from modules.utils import AutoPad, Interpolate, ShapeMixin, F_x, Flatten
+import sys
+sys.path.append(str(Path(__file__).parent))
+from .util import AutoPad, Interpolate, ShapeMixin, F_x, Flatten
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

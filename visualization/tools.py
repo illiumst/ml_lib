@@ -1,5 +1,10 @@
+try:
+    import matplotlib.pyplot as plt
+except ImportError:  # pragma: no-cover
+    raise ImportError('You want to use `matplotlib` plugins which are not installed yet,'  # pragma: no-cover
+                      ' install it with `pip install matplotlib`.')
+
 from pathlib import Path
-import matplotlib.pyplot as plt
 
 
 class Plotter(object):

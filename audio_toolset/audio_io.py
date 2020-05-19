@@ -1,5 +1,14 @@
-import librosa
-from scipy.signal import butter, lfilter
+try:
+    import librosa
+except ImportError:  # pragma: no-cover
+    raise ImportError('You want to use `librosa` plugins which are not installed yet,'  # pragma: no-cover
+                      ' install it with `pip install librosa`.')
+try:
+    from scipy.signal import butter, lfilter
+except ImportError:  # pragma: no-cover
+    raise ImportError('You want to use `scikit` plugins which are not installed yet,'  # pragma: no-cover
+                      ' install it with `pip install scikit-learn`.')
+
 
 import numpy as np
 

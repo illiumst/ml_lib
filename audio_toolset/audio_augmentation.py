@@ -1,4 +1,9 @@
-import librosa
+try:
+    import librosa
+except ImportError:  # pragma: no-cover
+    raise ImportError('You want to use `librosa` plugins which are not installed yet,'  # pragma: no-cover
+                      ' install it with `pip install librosa`.')
+
 import numpy as np
 
 

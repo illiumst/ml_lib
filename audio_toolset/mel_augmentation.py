@@ -59,9 +59,9 @@ class ShiftTime(object):
             # Set to silence for heading/ tailing
             shift = int(shift)
             if shift > 0:
-                augmented_data[:shift] = 0
+                augmented_data[:, :shift] = 0
             else:
-                augmented_data[shift:] = 0
+                augmented_data[:, shift:] = 0
             return augmented_data
         else:
             return x

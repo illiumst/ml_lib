@@ -125,4 +125,5 @@ class MelToImage(object):
         img = scale_minmax(mels, 0, 255).astype(np.uint8)
         img = np.flip(img, axis=0)  # put low frequencies at the bottom in image
         img = 255 - img  # invert. make black==more energy
+        img = img.astype(np.float32)
         return img

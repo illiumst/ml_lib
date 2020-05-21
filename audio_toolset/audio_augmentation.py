@@ -10,9 +10,9 @@ import numpy as np
 class Speed(object):
 
     def __init__(self, max_amount=0.3, speed_min=1, speed_max=1):
-        self.speed_max = speed_max
+        self.speed_max = speed_max if speed_max else 1
         self.speed_min = speed_min if speed_min else 1
-        self.max_amount = speed_max if speed_max else 1
+        self.max_amount = min(max(0, max_amount), 1)
 
     def __call__(self, x):
         if self.speed_min == 1 and self.speed_max == 1:

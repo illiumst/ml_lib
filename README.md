@@ -9,9 +9,10 @@ Clone it to find a collection of:
  - Utility Function for Model I/O
  - DL Modules
  - A Plotter Object
- - Audio Related Tools and Funtion
+ - Audio related Tools and Funtion
    - Librosa
    - Scipy Signal
+ - PointCloud related Tools and Functions
  
  ###Notes:
  - Use directory links to link from your main project folder to the ml_lib folder. Pycharm will automatically use 
@@ -19,11 +20,10 @@ Clone it to find a collection of:
     \
     \
     For Windows Users:
-    ```
+    ``` bash
      mklink /d "ml_lib" "..\ml_lib""
     ```
     For Unix User:
+    ``` bash
+    ln -s ../ml_lib ml_lib
     ```
-    TBA
-    ```
-  - Cheers

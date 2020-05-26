@@ -3,6 +3,15 @@ import shelve
 from pathlib import Path
 
 
+def fix_all_random_seeds(config_obj):
+    import numpy as np
+    import torch
+    import random
+    np.random.seed(config_obj.main.seed)
+    torch.manual_seed(config_obj.main.seed)
+    random.seed(config_obj.main.seed)
+
+
 def write_to_shelve(file_path, value):
     check_path(file_path)
     file_path.parent.mkdir(exist_ok=True, parents=True)

@@ -9,12 +9,13 @@ from pathlib import Path
 
 class Plotter(object):
     def __init__(self, root_path=''):
-        self.root_path = Path(root_path)
+        if not root_path:
+            self.root_path = Path(root_path)
 
-    def save_current_figure(self, path, extention='.png', naked=True):
+    def save_current_figure(self, filename: str, extention='.png', naked=False):
         fig, _ = plt.gcf(), plt.gca()
         # Prepare save location and check img file extention
-        path = self.root_path / Path(path if str(path).endswith(extention) else f'{str(path)}{extention}')
+        path = self.root_path / Path(filename if filename.endswith(extention) else f'{filename}{extention}')
         path.parent.mkdir(exist_ok=True, parents=True)
         if naked:
             plt.axis('off')

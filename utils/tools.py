@@ -2,6 +2,16 @@ import pickle
 import shelve
 from pathlib import Path
 
+import numpy as np
+
+from utils.project_config import GlobalVar
+
+
+def to_one_hot(idx_array):
+    one_hot = np.zeros((idx_array.size, len(GlobalVar.classes)))
+    one_hot[np.arange(idx_array.size), idx_array] = 1
+    return one_hot
+
 
 def fix_all_random_seeds(config_obj):
     import numpy as np

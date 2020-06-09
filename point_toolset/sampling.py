@@ -19,12 +19,8 @@ class RandomSampling(_Sampler):
         super(RandomSampling, self).__init__(*args, **kwargs)
 
     def __call__(self, pts, *args, **kwargs):
-        if pts.shape[0] < self.k:
-            return pts
-
-        else:
-            rnd_indexs = np.random.choice(np.arange(pts.shape[0]), self.k, replace=False)
-            return rnd_indexs
+        rnd_indexs = np.random.choice(np.arange(pts.shape[0]), min(self.k, pts.shape[0]), replace=False)
+        return rnd_indexs
 
 
 class FarthestpointSampling(_Sampler):

@@ -19,7 +19,8 @@ class LinearModule(ShapeMixin, nn.Module):
 
     def __init__(self, in_shape, out_features, bias=True, activation=None,
                  norm=False, dropout: Union[int, float] = 0, **kwargs):
-        warnings.warn(f'The following arguments have been ignored: \n {list(kwargs.keys())}')
+        if list(kwargs.keys()):
+            warnings.warn(f'The following arguments have been ignored: \n {list(kwargs.keys())}')
         super(LinearModule, self).__init__()
 
         self.in_shape = in_shape

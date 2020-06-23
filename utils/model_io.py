@@ -52,7 +52,7 @@ class ModelParameters(Namespace, Mapping):
                 if name == 'stretch':
                     return False
                 else:
-                    raise AttributeError(e)
+                    return None
 
     _activations = dict(
         leaky_relu=nn.LeakyReLU,

@@ -6,6 +6,7 @@ from torch_geometric.nn import PointConv, fps, radius, global_max_pool, knn_inte
 
 
 class SAModule(torch.nn.Module):
+
     def __init__(self, ratio, r, nn):
         super(SAModule, self).__init__()
         self.ratio = ratio

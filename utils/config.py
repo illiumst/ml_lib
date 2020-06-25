@@ -40,6 +40,7 @@ class Config(ConfigParser, ABC):
         params = deepcopy(self.as_dict)
         del params['model']['type']
         del params['data']['worker']
+        del params['data']['refresh']
         del params['main']
         del params['project']
         # Flatten the dict of dicts

@@ -201,3 +201,9 @@ class Config(ConfigParser, ABC):
         with path.open('w') as configfile:
             super().write(configfile)
         return True
+
+    def _write_section(self, fp, section_name, section_items, delimiter):
+        if section_name == 'project':
+            return
+        else:
+            super(Config, self)._write_section(fp, section_name, section_items, delimiter)

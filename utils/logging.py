@@ -62,6 +62,11 @@ class Logger(LightningLoggerBase, ABC):
 
         self.config = config
         self.debug = self.config.main.debug
+        if self.debug:
+            self.config.add_section('project')
+            self.config.set('project', 'owner', 'testuser')
+            self.config.set('project', 'name', 'test')
+            self.config.set('project', 'neptune_key', 'XXX')
         self._testtube_kwargs = dict(save_dir=self.outpath, version=self.version, name=self.name)
         self._neptune_kwargs = dict(offline_mode=self.debug,
                                     api_key=self.config.project.neptune_key,
@@ -97,10 +102,12 @@ class Logger(LightningLoggerBase, ABC):
         self.testtubelogger.log_metrics(dict(metric_name=metric_value))
         self.neptunelogger.log_metric(metric_name, metric_value, **kwargs)
 
-    def log_image(self, name, image, **kwargs):
+    def log_image(self, name, image, ext='png', **kwargs):
         self.neptunelogger.log_image(name, image, **kwargs)
         step = kwargs.get('step', None)
         name = f'{step}_{name}' if step is not None else name
+        name = f'{name}.{ext[1:] if ext.startswith(".") else ext}'
+        (self.log_dir / self.media_dir).mkdir(parents=True, exist_ok=True)
         image.savefig(self.log_dir / self.media_dir / name)
 
     def save(self):

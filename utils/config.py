@@ -1,4 +1,6 @@
 import ast
+from pathlib import Path
+
 from copy import deepcopy
 
 from abc import ABC
@@ -6,7 +8,6 @@ from abc import ABC
 from argparse import Namespace, ArgumentParser
 from collections import defaultdict
 from configparser import ConfigParser
-from pathlib import Path
 import hashlib
 
 
@@ -38,11 +39,26 @@ class Config(ConfigParser, ABC):
     def fingerprint(self):
         h = hashlib.md5()
         params = deepcopy(self.as_dict)
-        del params['model']['type']
-        del params['data']['worker']
-        del params['data']['refresh']
-        del params['main']
-        del params['project']
+        try:
+            del params['model']['type']
+        except KeyError:
+            pass
+        try:
+            del params['data']['worker']
+        except KeyError:
+            pass
+        try:
+            del params['data']['refresh']
+        except KeyError:
+            pass
+        try:
+            del params['main']
+        except KeyError:
+            pass
+        try:
+            del params['project']
+        except KeyError:
+            pass
         # Flatten the dict of dicts
         for section in list(params.keys()):
             params.update({f'{section}_{key}': val for key, val in params[section].items()})
@@ -59,6 +75,7 @@ class Config(ConfigParser, ABC):
 
     @property
     def _model_map(self):
+
         """
         This is function is supposed to return a dict, which holds a mapping from string model names to model classes
 
@@ -68,7 +85,6 @@ class Config(ConfigParser, ABC):
                     )
         :return:
         """
-
         raise NotImplementedError
 
     @property

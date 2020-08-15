@@ -1,6 +1,9 @@
+import importlib
 import pickle
 import shelve
-from pathlib import Path
+from pathlib import Path, PurePath
+from pydoc import safeimport
+from typing import Union
 
 import numpy as np
 import torch
@@ -37,3 +40,16 @@ def load_from_shelve(file_path, key):
 def check_path(file_path):
     assert isinstance(file_path, Path)
     assert str(file_path).endswith('.pik')
+
+
+def locate_and_import_class(class_name, models_location: Union[str, PurePath] = 'models', forceload=False):
+    """Locate an object by name or dotted path, importing as necessary."""
+    models_location = Path(models_location)
+    module_paths = [x for x in models_location.rglob('*.py') if x.is_file() and '__init__' not in x.name]
+    for module_path in module_paths:
+        mod = importlib.import_module('.'.join([x.replace('.py', '') for x in module_path.parts]))
+        try:
+            model_class = mod.__getattribute__(class_name)
+        except AttributeError:
+            continue
+        return model_class

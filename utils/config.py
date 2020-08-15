@@ -7,8 +7,10 @@ from abc import ABC
 
 from argparse import Namespace, ArgumentParser
 from collections import defaultdict
-from configparser import ConfigParser
+from configparser import ConfigParser, DuplicateSectionError
 import hashlib
+
+from ml_lib.utils.tools import locate_and_import_class
 
 
 def is_jsonable(x):
@@ -90,11 +92,13 @@ class Config(ConfigParser, ABC):
     @property
     def model_class(self):
         try:
-            return self._model_map[self.model.type]
-        except KeyError:
-            raise KeyError(f'The model alias you provided ("{self.get("model", "type")}")' +
-                           'does not exist! Try one of these: {list(self._model_map.keys())}')
+            return locate_and_import_class(self.model.type)
+        except AttributeError as e:
+            raise AttributeError(f'The model alias you provided ("{self.get("model", "type")}")' +
+                                 f'was not found!\n' +
+                                 f'{e}')
 
+    # --------------------------------------------------
     # TODO: Do this programmatically; This did not work:
     # Initialize Default Sections as Property
     # for section in self.default_sections:
@@ -223,3 +227,16 @@ class Config(ConfigParser, ABC):
             return
         else:
             super(Config, self)._write_section(fp, section_name, section_items, delimiter)
+
+    def add_section(self, section: str) -> None:
+        try:
+            super(Config, self).add_section(section)
+        except DuplicateSectionError:
+            pass
+
+
+class DataClass(Namespace):
+
+    @property
+    def __dict__(self):
+        return [x for x in dir(self) if not x.startswith('_')]

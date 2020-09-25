@@ -1,10 +1,77 @@
 #
 # Full Model Parts
 ###################
-import torch
-from torch import nn
+from argparse import Namespace
+from typing import Union, List, Tuple
 
-from .util import ShapeMixin
+import torch
+from abc import ABC
+from torch import nn
+from torch.utils.data import DataLoader
+
+from .util import ShapeMixin, LightningBaseModule
+
+
+class AEBaseModule(LightningBaseModule, ABC):
+
+    def generate_random_image(self, dataloader: Union[None, str, DataLoader] = None,
+                              lat_min: Union[Tuple, List, None] = None,
+                              lat_max: Union[Tuple, List, None] = None):
+
+        assert bool(dataloader) ^ bool(lat_min and lat_max), 'Decide wether to give min, max or a dataloader, not both.'
+
+        min_max = self._find_min_max(dataloader) if dataloader else [None, None]
+        # assert not any([x is None for x in min_max])
+        lat_min = torch.as_tensor(lat_min or min_max[0])
+        lat_max = lat_max or min_max[1]
+
+        random_z = torch.rand((1, self.lat_dim))
+        random_z = random_z * (abs(lat_min) + lat_max) - abs(lat_min)
+
+        return self.decoder(random_z).squeeze()
+
+    def encode(self, x):
+        if len(x.shape) == 3:
+            x = x.unsqueeze(0)
+        return self.encoder(x).squeeze()
+
+    def _find_min_max(self, dataloader):
+        encodings = list()
+        for batch in dataloader:
+            encodings.append(self.encode(batch))
+        encodings = torch.cat(encodings, dim=0)
+        min_lat = encodings.min(dim=1)
+        max_lat = encodings.max(dim=1)
+        return min_lat, max_lat
+
+    def decode_lat_evenly(self, n: int,
+                          dataloader: Union[None, str, DataLoader] = None,
+                          lat_min: Union[Tuple, List, None] = None,
+                          lat_max: Union[Tuple, List, None] = None):
+        assert bool(dataloader) ^ bool(lat_min and lat_max), 'Decide wether to give min, max or a dataloader, not both.'
+
+        min_max = self._find_min_max(dataloader) if dataloader else [None, None]
+
+        lat_min = lat_min or min_max[0]
+        lat_max = lat_max or min_max[1]
+
+        random_latent_samples = torch.stack([torch.linspace(lat_min[i].item(), lat_max[i].item(), n)
+                                             for i in range(self.params.lat_dim)], dim=-1).cpu().detach()
+        return self.decode(random_latent_samples).cpu().detach()
+
+    def decode(self, z):
+        if len(z.shape) == 1:
+            z = z.unsqueeze(0)
+        return self.decoder(z).squeeze()
+
+    def encode_and_restore(self, x):
+        x = x.to(self.device)
+        if len(x.shape) == 3:
+            x = x.unsqueeze(0)
+        z = self.encode(x)
+        x_hat = self.decode(z)
+
+        return Namespace(main_out=x_hat.squeeze(), latent_out=z)
 
 
 class Generator(nn.Module):
@@ -16,9 +83,12 @@ class Generator(nn.Module):
 
     # noinspection PyUnresolvedReferences
     def __init__(self, out_channels, re_shape, lat_dim, use_norm=False, use_bias=True, dropout: Union[int, float] = 0,
-                 filters: List[int] = None, activation=nn.ReLU):
+                 filters: List[int] = None, kernels: List[int] = None, activation=nn.ReLU, **kwargs):
         super(Generator, self).__init__()
-        assert filters, '"Filters" has to be a list of int len 3'
+        assert filters, '"Filters" has to be a list of int.'
+        assert filters, '"Filters" has to be a list of int.'
+        assert len(filters) == len(kernels), '"Filters" and "Kernels" has to be of same length.'
+
         self.filters = filters
         self.activation = activation
         self.inner_activation = activation()
@@ -29,52 +99,35 @@ class Generator(nn.Module):
         # re_shape = (self.feature_mixed_dim // reduce(mul, re_shape[1:]), ) + tuple(re_shape[1:])
 
         self.flat = Flatten(to=re_shape)
+        self.de_conv_list = nn.ModuleList()
 
-        self.deconv1 = DeConvModule(re_shape, conv_filters=self.filters[0],
-                                    conv_kernel=5,
-                                    conv_padding=2,
-                                    conv_stride=1,
-                                    normalize=use_norm,
-                                    activation=self.activation,
-                                    interpolation_scale=2,
-                                    dropout=self.dropout
-                                    )
+        last_shape = re_shape
+        for conv_filter, conv_kernel in zip(filters, kernels):
+            self.de_conv_list.append(DeConvModule(last_shape, conv_filters=self.filters[0],
+                                                  conv_kernel=conv_kernel,
+                                                  conv_padding=conv_kernel-2,
+                                                  conv_stride=conv_filter,
+                                                  normalize=use_norm,
+                                                  activation=self.activation,
+                                                  interpolation_scale=2,
+                                                  dropout=self.dropout
+                                                  )
+                                     )
+            last_shape = self.de_conv_list[-1].shape
 
-        self.deconv2 = DeConvModule(self.deconv1.shape, conv_filters=self.filters[1],
-                                    conv_kernel=3,
-                                    conv_padding=1,
-                                    conv_stride=1,
-                                    normalize=use_norm,
-                                    activation=self.activation,
-                                    interpolation_scale=2,
-                                    dropout=self.dropout
-                                    )
-
-        self.deconv3 = DeConvModule(self.deconv2.shape, conv_filters=self.filters[2],
-                                    conv_kernel=3,
-                                    conv_padding=1,
-                                    conv_stride=1,
-                                    normalize=use_norm,
-                                    activation=self.activation,
-                                    interpolation_scale=2,
-                                    dropout=self.dropout
-                                    )
-
-        self.deconv4 = DeConvModule(self.deconv3.shape, conv_filters=out_channels,
-                                    conv_kernel=3,
-                                    conv_padding=1,
-                                    # normalize=norm,
-                                    activation=self.out_activation
-                                    )
+        self.de_conv_out = DeConvModule(self.de_conv_list[-1].shape, conv_filters=out_channels, conv_kernel=3,
+                                        conv_padding=1, activation=self.out_activation
+                                        )
 
     def forward(self, z):
         tensor = self.l1(z)
         tensor = self.inner_activation(tensor)
         tensor = self.flat(tensor)
-        tensor = self.deconv1(tensor)
-        tensor = self.deconv2(tensor)
-        tensor = self.deconv3(tensor)
-        tensor = self.deconv4(tensor)
+
+        for de_conv in self.de_conv_list:
+            tensor = de_conv(tensor)
+
+        tensor = self.de_conv_out(tensor)
         return tensor
 
     def size(self):
@@ -119,12 +172,14 @@ class BaseEncoder(ShapeMixin, nn.Module):
     # noinspection PyUnresolvedReferences
     def __init__(self, in_shape, lat_dim=256, use_bias=True, use_norm=False, dropout: Union[int, float] = 0,
                  latent_activation: Union[nn.Module, None] = None, activation: nn.Module = nn.ELU,
-                 filters: List[int] = None):
+                 filters: List[int] = None, kernels: List[int] = None, **kwargs):
         super(BaseEncoder, self).__init__()
-        assert filters, '"Filters" has to be a list of int len 3'
+        assert filters, '"Filters" has to be a list of int'
+        assert kernels, '"Kernels" has to be a list of int'
+        assert len(kernels) == len(filters), 'Length of "Filters" and "Kernels" has to be same.'
 
         # Optional Padding for odd image-sizes
-        # Obsolet, already Done by autopadding module on incoming tensors
+        # Obsolet, cdan be done by autopadding module on incoming tensors
         # in_shape = [x+1 if x % 2 != 0 and idx else x for idx, x in enumerate(in_shape)]
 
         # Parameters
@@ -133,43 +188,29 @@ class BaseEncoder(ShapeMixin, nn.Module):
         self.use_bias = use_bias
         self.latent_activation = latent_activation() if latent_activation else None
 
+        self.conv_list = nn.ModuleList()
+
         # Modules
-        self.conv1 = ConvModule(self.in_shape, conv_filters=filters[0],
-                                conv_kernel=3,
-                                conv_padding=1,
-                                conv_stride=1,
-                                pooling_size=2,
-                                use_norm=use_norm,
-                                dropout=dropout,
-                                activation=activation
-                                )
-
-        self.conv2 = ConvModule(self.conv1.shape, conv_filters=filters[1],
-                                conv_kernel=3,
-                                conv_padding=1,
-                                conv_stride=1,
-                                pooling_size=2,
-                                use_norm=use_norm,
-                                dropout=dropout,
-                                activation=activation
-                                )
-
-        self.conv3 = ConvModule(self.conv2.shape, conv_filters=filters[2],
-                                conv_kernel=5,
-                                conv_padding=2,
-                                conv_stride=1,
-                                pooling_size=2,
-                                use_norm=use_norm,
-                                dropout=dropout,
-                                activation=activation
-                                )
+        last_shape = self.in_shape
+        for conv_filter, conv_kernel in zip(filters, kernels):
+            self.conv_list.append(ConvModule(last_shape, conv_filters=conv_filter,
+                                             conv_kernel=conv_kernel,
+                                             conv_padding=conv_kernel-2,
+                                             conv_stride=1,
+                                             pooling_size=2,
+                                             use_norm=use_norm,
+                                             dropout=dropout,
+                                             activation=activation
+                                             )
+                                  )
+            last_shape = self.conv_list[-1].shape
 
         self.flat = Flatten()
 
     def forward(self, x):
-        tensor = self.conv1(x)
-        tensor = self.conv2(tensor)
-        tensor = self.conv3(tensor)
+        tensor = x
+        for conv in self.conv_list:
+            tensor = conv(tensor)
         tensor = self.flat(tensor)
         return tensor
 

@@ -130,8 +130,9 @@ class DeConvModule(ShapeMixin, nn.Module):
     def __init__(self, in_shape, conv_filters, conv_kernel, conv_stride=1, conv_padding=0,
                  dropout: Union[int, float] = 0, autopad=0,
                  activation: Union[None, nn.Module] = nn.ReLU, interpolation_scale=0,
-                 bias=True, norm=False):
+                 bias=True, norm=False, **kwargs):
         super(DeConvModule, self).__init__()
+        warnings.warn(f'The following arguments have been ignored: \n {list(kwargs.keys())}')
         in_channels, height, width = in_shape[0], in_shape[1], in_shape[2]
         self.padding = conv_padding
         self.conv_kernel = conv_kernel

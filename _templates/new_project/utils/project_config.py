@@ -1,6 +1,6 @@
 from argparse import Namespace
 
-from utils.config import Config
+from ml_lib.utils.config import Config
 
 
 class GlobalVar(Namespace):

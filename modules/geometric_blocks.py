@@ -1,8 +1,10 @@
 import torch
 from torch import nn
 from torch.nn import ReLU
-
-from torch_geometric.nn import PointConv, fps, radius, global_max_pool, knn_interpolate
+try:
+    from torch_geometric.nn import PointConv, fps, radius, global_max_pool, knn_interpolate
+except ImportError:
+    print('Install torch-geometric to use this package.')
 
 
 class SAModule(torch.nn.Module):

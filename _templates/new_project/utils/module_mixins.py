@@ -11,13 +11,13 @@ from torch.utils.data import DataLoader
 from torchcontrib.optim import SWA
 from torchvision.transforms import Compose
 
-from _templates.new_project.datasets.template_dataset import TemplateDataset
+from ml_lib._templates.new_project.datasets.template_dataset import TemplateDataset
 
-from audio_toolset.audio_io import NormalizeLocal
-from modules.utils import LightningBaseModule
-from utils.transforms import ToTensor
+from ml_lib.audio_toolset.audio_io import NormalizeLocal
+from ml_lib.modules.util import LightningBaseModule
+from ml_lib.utils.transforms import ToTensor
 
-from _templates.new_project.utils.project_config import GlobalVar as GlobalVars
+from ml_lib._templates.new_project.utils.project_config import GlobalVar as GlobalVars
 
 
 class BaseOptimizerMixin:

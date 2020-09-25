@@ -1,6 +1,6 @@
 import warnings
 
-from _templates.new_project.utils.project_config import Config
+from ml_lib._templates.new_project.utils.project_config import Config
 
 warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
@@ -8,7 +8,7 @@ warnings.filterwarnings('ignore', category=UserWarning)
 # Imports
 # =============================================================================
 
-from _templates.new_project.main import run_lightning_loop, args
+from ml_lib._templates.new_project.main import run_lightning_loop, args
 
 
 if __name__ == '__main__':

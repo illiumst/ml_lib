@@ -20,7 +20,7 @@ class ModelParameters(Namespace, Mapping):
 
         paramter_mapping.update(
             dict(
-                activation=self._activations[self['activation']]
+                activation=self.__getattribute__('activation')
             )
         )
 
@@ -44,7 +44,7 @@ class ModelParameters(Namespace, Mapping):
 
     def __getattribute__(self, name):
         if name == 'activation':
-            return self._activations[self['activation']]
+            return self._activations[self['activation'].lower()]
         else:
             try:
                 return super(ModelParameters, self).__getattribute__(name)
@@ -56,6 +56,7 @@ class ModelParameters(Namespace, Mapping):
 
     _activations = dict(
         leaky_relu=nn.LeakyReLU,
+        elu=nn.ELU,
         relu=nn.ReLU,
         sigmoid=nn.Sigmoid,
         tanh=nn.Tanh

@@ -2,7 +2,6 @@ import importlib
 import pickle
 import shelve
 from pathlib import Path, PurePath
-from pydoc import safeimport
 from typing import Union
 
 import numpy as np
@@ -50,6 +49,8 @@ def locate_and_import_class(class_name, models_location: Union[str, PurePath] = 
         mod = importlib.import_module('.'.join([x.replace('.py', '') for x in module_path.parts]))
         try:
             model_class = mod.__getattribute__(class_name)
+            return model_class
         except AttributeError:
-            continue
-        return model_class
+           continue
+    raise AttributeError(f'Check the Model name. Possible model files are:\n{[x.name for x in module_paths]}')
+

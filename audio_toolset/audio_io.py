@@ -76,9 +76,9 @@ class NormalizeMelband(object):
 
 
 class AudioToMel(object):
-    def __init__(self, amplitude_to_db=False, power_to_db=False, **kwargs):
+    def __init__(self, amplitude_to_db=False, power_to_db=False, **mel_kwargs):
         assert not all([amplitude_to_db, power_to_db]), "Choose amplitude_to_db or power_to_db, not both!"
-        self.mel_kwargs = kwargs
+        self.mel_kwargs = mel_kwargs
         self.amplitude_to_db = amplitude_to_db
         self.power_to_db = power_to_db
 

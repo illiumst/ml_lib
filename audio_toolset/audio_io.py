@@ -52,7 +52,7 @@ class NormalizeLocal(object):
         std = x.std() + 0.0001
 
         # Pytorch Version:
-        # x = x.__sub__(mean).__div__(std)
+        # tensor = tensor.__sub__(mean).__div__(std)
         # Numpy Version
         x = (x - mean) / std
         x[np.isnan(x)] = 0

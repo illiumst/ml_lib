@@ -102,7 +102,7 @@ class Config(ConfigParser, ABC):
     # TODO: Do this programmatically; This did not work:
     # Initialize Default Sections as Property
     # for section in self.default_sections:
-    #     self.__setattr__(section, property(lambda x :x._get_namespace_for_section(section))
+    #     self.__setattr__(section, property(lambda tensor :tensor._get_namespace_for_section(section))
 
     @property
     def main(self):

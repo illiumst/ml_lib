@@ -1,3 +1,5 @@
+import math
+
 from pathlib import Path
 from typing import Union
 
@@ -142,8 +144,8 @@ class DeConvModule(ShapeMixin, nn.Module):
 
         self.autopad = AutoPad() if autopad else lambda x: x
         self.interpolation = Interpolate(scale_factor=interpolation_scale) if interpolation_scale else lambda x: x
-        self.norm = nn.BatchNorm2d(in_channels, eps=1e-04) if norm else lambda x: x
-        self.dropout = nn.Dropout2d(dropout) if dropout else lambda x: x
+        self.norm = nn.BatchNorm2d(in_channels, eps=1e-04) if norm else F_x(self.in_shape)
+        self.dropout = nn.Dropout2d(dropout) if dropout else F_x(self.in_shape)
         self.de_conv = nn.ConvTranspose2d(in_channels, self.conv_filters, self.conv_kernel, bias=bias,
                                           padding=self.padding, stride=self.stride)
 
@@ -168,8 +170,8 @@ class ResidualModule(ShapeMixin, nn.Module):
         self.in_shape = in_shape
         module_parameters.update(in_shape=in_shape)
         if norm:
-            self.norm = nn.BatchNorm1d if len(self.in_shape) <= 2 else nn.BatchNorm2d
-            self.norm = self.norm(self.in_shape if isinstance(self.in_shape, int) else self.in_shape[0])
+            norm = nn.BatchNorm1d if len(self.in_shape) <= 2 else nn.BatchNorm2d
+            self.norm = norm(self.in_shape if isinstance(self.in_shape, int) else self.in_shape[0])
         else:
             self.norm = F_x(self.in_shape)
         self.activation = module_parameters.get('activation', None)
@@ -181,8 +183,9 @@ class ResidualModule(ShapeMixin, nn.Module):
         assert self.in_shape == self.shape, f'The in_shape: {self.in_shape} - must match the out_shape: {self.shape}.'
 
     def forward(self, x):
+        tensor = self.norm(x)
         for module in self.residual_block:
-            tensor = module(x)
+            tensor = module(tensor)
 
         # noinspection PyUnboundLocalVariable
         tensor = tensor + x
@@ -207,4 +210,85 @@ class RecurrentModule(ShapeMixin, nn.Module):
 
     def forward(self, x):
         tensor = self.rnn(x)
+        return tensor
+
+
+class AttentionModule(ShapeMixin, nn.Module):
+    def __init__(self,in_shape, features, dropout=0.1):
+        super().__init__()
+        self.in_shape = in_shape
+        self.dropout = dropout
+        self.features = features
+        raise NotImplementedError
+
+    def forward(self, x):
+        pass
+
+
+class MultiHeadAttentionModule(ShapeMixin, nn.Module):
+    def __init__(self, in_shape, heads, features, dropout=0.1):
+        super().__init__()
+        self.in_shape = in_shape
+
+        self.features = features
+        self.heads = heads
+        self.final_dim = self.features // self.heads
+
+        self.linear_q = LinearModule(self.features, self.features)
+        self.linear_v = LinearModule(self.features, self.features)
+        self.linear_k = LinearModule(self.features, self.features)
+        self.dropout = nn.Dropout(dropout) if dropout else F_x(self.features)
+        self.linear_out = nn.Linear(self.features, self.features)
+
+    def forward(self, q, k, v, mask=None):
+
+        batch_size = q.size(0)
+
+        # perform linear operation and split into h heads
+        k = self.linear_k(k).view(batch_size, -1, self.heads, self.final_dim)
+        q = self.linear_q(q).view(batch_size, -1, self.heads, self.final_dim)
+        v = self.linear_v(v).view(batch_size, -1, self.heads, self.final_dim)
+
+        # transpose to get dimensions bs * h * sl * features
+        # ToDo: Do we need this?
+
+        k = k.transpose(1, 2)
+        q = q.transpose(1, 2)
+        v = v.transpose(1, 2)
+
+        # calculate attention
+        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.final_dim)
+        if mask is not None:
+            mask = mask.unsqueeze(1)
+            scores = scores.masked_fill(mask == 0, -1e9)
+        scores = F.softmax(scores, dim=-1)
+        scores = self.dropout(scores)
+        scores = torch.matmul(scores, v)
+
+        # concatenate heads and apply final linear transformation
+        # ToDo: This seems to be old coding style. Do we Need this?
+        concat = scores.transpose(1, 2).contiguous().view(batch_size, -1, self.features)
+
+        output = self.out(concat)
+        return output
+
+
+class TransformerModule(ShapeMixin, nn.Module):
+
+    def __init__(self, in_shape, hidden_size, n_heads, num_layers=1, dropout=None, use_norm=False, **kwargs):
+        super(TransformerModule, self).__init__()
+
+        self.in_shape = in_shape
+
+        self.flat = Flatten(self.in_shape) if isinstance(self.in_shape, (tuple, list)) else F_x(in_shape)
+
+        encoder_layer = nn.TransformerEncoderLayer(self.flat_shape, n_heads, dim_feedforward=hidden_size,
+                                                   dropout=dropout, activation=kwargs.get('activation')
+                                                   )
+        self.norm = nn.LayerNorm(hidden_size) if use_norm else F_x(hidden_size)
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers, )
+
+    def forward(self, x, mask=None, key_padding_mask=None):
+        tensor = self.flat(x)
+        tensor = self.transformer(tensor, mask, key_padding_mask)
         return tensor

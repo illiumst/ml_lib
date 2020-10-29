@@ -11,7 +11,7 @@ from operator import mul
 from torch import nn
 from torch.utils.data import DataLoader
 
-from .blocks import ConvModule, DeConvModule, LinearModule
+from .blocks import ConvModule, DeConvModule, LinearModule, MultiHeadAttentionModule
 
 from .util import ShapeMixin, LightningBaseModule, Flatten
 
@@ -25,7 +25,7 @@ class AEBaseModule(LightningBaseModule, ABC):
         assert bool(dataloader) ^ bool(lat_min and lat_max), 'Decide wether to give min, max or a dataloader, not both.'
 
         min_max = self._find_min_max(dataloader) if dataloader else [None, None]
-        # assert not any([x is None for x in min_max])
+        # assert not any([tensor is None for tensor in min_max])
         lat_min = torch.as_tensor(lat_min or min_max[0])
         lat_max = lat_max or min_max[1]
 
@@ -189,7 +189,7 @@ class BaseEncoder(ShapeMixin, nn.Module):
 
         # Optional Padding for odd image-sizes
         # Obsolet, cdan be done by autopadding module on incoming tensors
-        # in_shape = [x+1 if x % 2 != 0 and idx else x for idx, x in enumerate(in_shape)]
+        # in_shape = [tensor+1 if tensor % 2 != 0 and idx else tensor for idx, tensor in enumerate(in_shape)]
 
         # Parameters
         self.lat_dim = lat_dim
@@ -275,3 +275,16 @@ class Encoder(BaseEncoder):
         tensor = self.l1(tensor)
         tensor = self.latent_activation(tensor) if self.latent_activation else tensor
         return tensor
+
+
+class TransformerEncoder(ShapeMixin, nn.Module):
+
+    def __init__(self, in_shape):
+        super(TransformerEncoder, self).__init__()
+        # MultiheadSelfAttention
+        self.msa = MultiHeadAttentionModule()
+
+
+    def forward(self, x):
+
+

@@ -14,6 +14,10 @@ from torch import nn
 class ModelParameters(Namespace, Mapping):
 
     @property
+    def activation_as_string(self):
+        return self['activation'].lower()
+
+    @property
     def module_kwargs(self):
 
         paramter_mapping = deepcopy(self.__dict__)
@@ -56,6 +60,7 @@ class ModelParameters(Namespace, Mapping):
 
     _activations = dict(
         leaky_relu=nn.LeakyReLU,
+        gelu=nn.GELU,
         elu=nn.ELU,
         relu=nn.ReLU,
         sigmoid=nn.Sigmoid,

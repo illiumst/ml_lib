@@ -11,7 +11,7 @@ from operator import mul
 from torch import nn
 from torch.utils.data import DataLoader
 
-from .blocks import ConvModule, DeConvModule, LinearModule, MultiHeadAttentionModule
+from .blocks import ConvModule, DeConvModule, LinearModule
 
 from .util import ShapeMixin, LightningBaseModule, Flatten
 
@@ -112,6 +112,7 @@ class Generator(ShapeMixin, nn.Module):
 
         last_shape = re_shape
         for conv_filter, conv_kernel, interpolation in zip(reversed(filters), kernels, interpolations):
+            # noinspection PyTypeChecker
             self.de_conv_list.append(DeConvModule(last_shape, conv_filters=conv_filter,
                                                   conv_kernel=conv_kernel,
                                                   conv_padding=conv_kernel-2,
@@ -275,16 +276,3 @@ class Encoder(BaseEncoder):
         tensor = self.l1(tensor)
         tensor = self.latent_activation(tensor) if self.latent_activation else tensor
         return tensor
-
-
-class TransformerEncoder(ShapeMixin, nn.Module):
-
-    def __init__(self, in_shape):
-        super(TransformerEncoder, self).__init__()
-        # MultiheadSelfAttention
-        self.msa = MultiHeadAttentionModule()
-
-
-    def forward(self, x):
-
-

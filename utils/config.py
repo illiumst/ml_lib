@@ -94,7 +94,7 @@ class Config(ConfigParser, ABC):
         try:
             return locate_and_import_class(self.model.type)
         except AttributeError as e:
-            raise AttributeError(f'The model alias you provided ("{self.get("model", "type")}")' +
+            raise AttributeError(f'The model alias you provided ("{self.get("model", "type")}") ' +
                                  f'was not found!\n' +
                                  f'{e}')
 

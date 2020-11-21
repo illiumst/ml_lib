@@ -1,8 +1,5 @@
 from argparse import Namespace
 
-from ml_lib.utils.config import Config
-
-
 class GlobalVar(Namespace):
     # Labels for classes
     LEFT = 1
@@ -21,10 +18,3 @@ class GlobalVar(Namespace):
     train='train',
     vali='vali',
     test='test'
-
-
-class ThisConfig(Config):
-
-    @property
-    def _model_map(self):
-        return dict()

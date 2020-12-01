@@ -92,9 +92,18 @@ class Config(ConfigParser, ABC):
     @property
     def model_class(self):
         try:
-            return locate_and_import_class(self.model.type)
+            return locate_and_import_class(self.model.type, folder_path='models')
         except AttributeError as e:
             raise AttributeError(f'The model alias you provided ("{self.get("model", "type")}") ' +
+                                 f'was not found!\n' +
+                                 f'{e}')
+
+    @property
+    def data_class(self):
+        try:
+            return locate_and_import_class(self.data.class_name, folder_path='datasets')
+        except AttributeError as e:
+            raise AttributeError(f'The dataset alias you provided ("{self.get("data", "class_name")}") ' +
                                  f'was not found!\n' +
                                  f'{e}')
 

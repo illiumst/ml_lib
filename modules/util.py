@@ -1,5 +1,3 @@
-from typing import List
-
 from functools import reduce
 
 from abc import ABC
@@ -13,6 +11,7 @@ from torch.nn import functional as F, Unfold
 # Utility - Modules
 ###################
 from ..utils.model_io import ModelParameters
+from ..utils.tools import locate_and_import_class
 
 try:
     import pytorch_lightning as pl
@@ -44,6 +43,15 @@ try:
 
         def size(self):
             return self.shape
+
+        @property
+        def dataset_class(self):
+            try:
+                return locate_and_import_class(self.params.class_name, folder_path='datasets')
+            except AttributeError as e:
+                raise AttributeError(f'The dataset alias you provided ("{self.params.class_name}") ' +
+                                     f'was not found!\n' +
+                                     f'{e}')
 
         def save_to_disk(self, model_path):
             Path(model_path, exist_ok=True).mkdir(parents=True, exist_ok=True)
@@ -83,6 +91,7 @@ try:
 
 except ImportError:
     module_types = (nn.Module,)
+    pl = None
     pass  # Maybe post a hint to install pytorch-lightning.
 
 

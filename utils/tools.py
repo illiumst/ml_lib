@@ -41,10 +41,10 @@ def check_path(file_path):
     assert str(file_path).endswith('.pik')
 
 
-def locate_and_import_class(class_name, models_location: Union[str, PurePath] = 'models', forceload=False):
+def locate_and_import_class(class_name, folder_path: Union[str, PurePath] = ''):
     """Locate an object by name or dotted path, importing as necessary."""
-    models_location = Path(models_location)
-    module_paths = [x for x in models_location.rglob('*.py') if x.is_file() and '__init__' not in x.name]
+    folder_path = Path(folder_path)
+    module_paths = [x for x in folder_path.rglob('*.py') if x.is_file() and '__init__' not in x.name]
     for module_path in module_paths:
         mod = importlib.import_module('.'.join([x.replace('.py', '') for x in module_path.parts]))
         try:

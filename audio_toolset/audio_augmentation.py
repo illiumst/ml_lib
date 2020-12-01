@@ -15,6 +15,9 @@ class Speed(object):
         # noinspection PyTypeChecker
         self.max_amount = min(max(0, max_amount), 1)
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.__dict__})'
+
     def __call__(self, x):
         if self.speed_min == 1 and self.speed_max == 1:
             return x

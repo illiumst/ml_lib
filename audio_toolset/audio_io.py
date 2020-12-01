@@ -37,6 +37,9 @@ class MFCC(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.__dict__})'
+
     def __call__(self, y):
         mfcc = librosa.feature.mfcc(y, **self.__dict__)
         return mfcc
@@ -46,6 +49,9 @@ class NormalizeLocal(object):
     def __init__(self):
         self.cache: np.ndarray
         pass
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.__dict__})'
 
     def __call__(self, x: np.ndarray):
         mean = x.mean()
@@ -64,6 +70,9 @@ class NormalizeMelband(object):
     def __init__(self):
         self.cache: np.ndarray
         pass
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.__dict__})'
 
     def __call__(self, x: np.ndarray):
         mean = x.mean(-1).unsqueeze(-1)
@@ -98,6 +107,9 @@ class PowerToDB(object):
     def __init__(self, running_max=False):
         self.running_max = 0 if running_max else None
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.__dict__})'
+
     def __call__(self, x):
         if self.running_max is not None:
             self.running_max = max(np.max(x), self.running_max)
@@ -109,6 +121,9 @@ class LowPass(object):
     def __init__(self, sr=16000):
         self.sr = sr
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.__dict__})'
+
     def __call__(self, x):
         return butter_lowpass_filter(x, 1000, 1)
 
@@ -116,6 +131,9 @@ class LowPass(object):
 class MelToImage(object):
     def __init__(self):
         pass
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.__dict__})'
 
     def __call__(self, x):
         # Source to Solution: https://stackoverflow.com/a/57204349

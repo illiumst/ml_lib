@@ -44,6 +44,9 @@ try:
         def size(self):
             return self.shape
 
+        def additional_scores(self, outputs):
+            raise NotImplementedError
+
         @property
         def dataset_class(self):
             try:

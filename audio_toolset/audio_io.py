@@ -1,3 +1,7 @@
+from typing import Union
+
+import torch
+
 try:
     import librosa
 except ImportError:  # pragma: no-cover
@@ -8,9 +12,6 @@ try:
 except ImportError:  # pragma: no-cover
     raise ImportError('You want to use `scikit` plugins which are not installed yet,'  # pragma: no-cover
                       ' install it with `pip install scikit-learn`.')
-
-
-import numpy as np
 
 
 def scale_minmax(x, min_val=0.0, max_val=1.0):
@@ -47,13 +48,12 @@ class MFCC(object):
 
 class NormalizeLocal(object):
     def __init__(self):
-        self.cache: np.ndarray
         pass
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.__dict__})'
 
-    def __call__(self, x: np.ndarray):
+    def __call__(self, x: torch.Tensor):
         mean = x.mean()
         std = x.std() + 0.0001
 
@@ -61,37 +61,47 @@ class NormalizeLocal(object):
         # tensor = tensor.__sub__(mean).__div__(std)
         # Numpy Version
         x = (x - mean) / std
-        x[np.isnan(x)] = 0
-        x[np.isinf(x)] = 0
+
+        x[torch.isnan(x)] = 0
+        x[torch.isinf(x)] = 0
+
         return x
 
 
 class NormalizeMelband(object):
     def __init__(self):
-        self.cache: np.ndarray
+
         pass
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.__dict__})'
 
-    def __call__(self, x: np.ndarray):
+    def __call__(self, x: torch.Tensor):
         mean = x.mean(-1).unsqueeze(-1)
         std = x.std(-1).unsqueeze(-1)
 
         x = x.__sub__(mean).__div__(std)
-        x[np.isnan(x)] = 0
-        x[np.isinf(x)] = 0
+        x[torch.isnan(x)] = 0
+        x[torch.isinf(x)] = 0
         return x
 
 
-class AudioToMel(object):
+class LibrosaAudioToMel(object):
     def __init__(self, amplitude_to_db=False, power_to_db=False, **mel_kwargs):
         assert not all([amplitude_to_db, power_to_db]), "Choose amplitude_to_db or power_to_db, not both!"
+        # Mel kwargs are:
+        #   sr
+        #   n_mels
+        #   n_fft
+        #   hop_length
+
         self.mel_kwargs = mel_kwargs
         self.amplitude_to_db = amplitude_to_db
         self.power_to_db = power_to_db
 
     def __call__(self, y):
+        import numpy as np
+
         mel = librosa.feature.melspectrogram(y, **self.mel_kwargs)
         if self.amplitude_to_db:
             mel = librosa.amplitude_to_db(mel, ref=np.max)
@@ -111,6 +121,7 @@ class PowerToDB(object):
         return f'{self.__class__.__name__}({self.__dict__})'
 
     def __call__(self, x):
+        import numpy as np
         if self.running_max is not None:
             self.running_max = max(np.max(x), self.running_max)
             return librosa.power_to_db(x, ref=self.running_max)
@@ -137,11 +148,11 @@ class MelToImage(object):
 
     def __call__(self, x):
         # Source to Solution: https://stackoverflow.com/a/57204349
-        mels = np.log(x + 1e-9)  # add small number to avoid log(0)
+        mels = torch.log(x + 1e-9)  # add small number to avoid log(0)
 
         # min-max scale to fit inside 8-bit range
-        img = scale_minmax(mels, 0, 255).astype(np.uint8)
-        img = np.flip(img, axis=0)  # put low frequencies at the bottom in image
-        img = 255 - img  # invert. make black==more energy
-        img = img.astype(np.float32)
+        img = scale_minmax(mels, 0, 255).int()
+        img = torch.flip(img, dims=(0,))  # put low frequencies at the bottom in image
+        img = torch.as_tensor(255) - img  # invert. make black==more energy
+        img = img.float()
         return img

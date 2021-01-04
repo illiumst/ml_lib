@@ -1,6 +1,6 @@
 from typing import Union
 
-import torch
+import numpy as np
 
 try:
     import librosa
@@ -53,7 +53,7 @@ class NormalizeLocal(object):
     def __repr__(self):
         return f'{self.__class__.__name__}({self.__dict__})'
 
-    def __call__(self, x: torch.Tensor):
+    def __call__(self, x: np.ndarray):
         mean = x.mean()
         std = x.std() + 0.0001
 
@@ -62,8 +62,8 @@ class NormalizeLocal(object):
         # Numpy Version
         x = (x - mean) / std
 
-        x[torch.isnan(x)] = 0
-        x[torch.isinf(x)] = 0
+        x[np.isnan(x)] = 0
+        x[np.isinf(x)] = 0
 
         return x
 
@@ -76,13 +76,13 @@ class NormalizeMelband(object):
     def __repr__(self):
         return f'{self.__class__.__name__}({self.__dict__})'
 
-    def __call__(self, x: torch.Tensor):
+    def __call__(self, x: np.ndarray):
         mean = x.mean(-1).unsqueeze(-1)
         std = x.std(-1).unsqueeze(-1)
 
         x = x.__sub__(mean).__div__(std)
-        x[torch.isnan(x)] = 0
-        x[torch.isinf(x)] = 0
+        x[np.isnan(x)] = 0
+        x[np.isinf(x)] = 0
         return x
 
 
@@ -100,8 +100,6 @@ class LibrosaAudioToMel(object):
         self.power_to_db = power_to_db
 
     def __call__(self, y):
-        import numpy as np
-
         mel = librosa.feature.melspectrogram(y, **self.mel_kwargs)
         if self.amplitude_to_db:
             mel = librosa.amplitude_to_db(mel, ref=np.max)
@@ -121,7 +119,6 @@ class PowerToDB(object):
         return f'{self.__class__.__name__}({self.__dict__})'
 
     def __call__(self, x):
-        import numpy as np
         if self.running_max is not None:
             self.running_max = max(np.max(x), self.running_max)
             return librosa.power_to_db(x, ref=self.running_max)
@@ -148,11 +145,11 @@ class MelToImage(object):
 
     def __call__(self, x):
         # Source to Solution: https://stackoverflow.com/a/57204349
-        mels = torch.log(x + 1e-9)  # add small number to avoid log(0)
+        mels = np.log(x + 1e-9)  # add small number to avoid log(0)
 
         # min-max scale to fit inside 8-bit range
-        img = scale_minmax(mels, 0, 255).int()
-        img = torch.flip(img, dims=(0,))  # put low frequencies at the bottom in image
-        img = torch.as_tensor(255) - img  # invert. make black==more energy
-        img = img.float()
+        img = scale_minmax(mels, 0, 255)
+        img = np.flip(img)  # put low frequencies at the bottom in image
+        img = 255 - img  # invert. make black==more energy
+        img = img.astype(np.float)
         return img

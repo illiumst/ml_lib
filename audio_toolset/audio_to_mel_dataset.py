@@ -35,7 +35,7 @@ class _AudioToMelDataset(Dataset, ABC):
         self.audio_augmentations = audio_augmentations
 
         self.dataset = TorchMelDataset(self.mel_file_path, sample_segment_len, sample_hop_len, label,
-                                       self.audio_file_duration, mel_kwargs['sample_rate'], mel_kwargs['hop_length'],
+                                       self.audio_file_duration, mel_kwargs['sr'], mel_kwargs['hop_length'],
                                        mel_kwargs['n_mels'], transform=mel_augmentations)
 
     def _build_mel(self):
@@ -70,7 +70,7 @@ class LibrosaAudioToMelDataset(_AudioToMelDataset):
         audio_file_path = Path(audio_file_path)
         # audio_file, sampling_rate = librosa.load(self.audio_path, sr=sampling_rate)
         mel_kwargs = kwargs.get('mel_kwargs', dict())
-        mel_kwargs.update(sr=mel_kwargs.get('sr', None) or librosa.get_samplerate(self.audio_path))
+        mel_kwargs.update(sr=mel_kwargs.get('sr', None) or librosa.get_samplerate(audio_file_path))
         kwargs.update(mel_kwargs=mel_kwargs)
 
         super(LibrosaAudioToMelDataset, self).__init__(audio_file_path, *args, **kwargs)
@@ -84,11 +84,14 @@ class LibrosaAudioToMelDataset(_AudioToMelDataset):
         if self.reset:
             self.mel_file_path.unlink(missing_ok=True)
         if not self.mel_file_path.exists():
+            lockfile = Path(str(self.mel_file_path).replace(self.mel_file_path.suffix, '.lock'))
             self.mel_file_path.parent.mkdir(parents=True, exist_ok=True)
+            lockfile.touch(exist_ok=False)
             raw_sample, _ = librosa.core.load(self.audio_path, sr=self.sampling_rate)
             mel_sample = self._mel_transform(raw_sample)
             with self.mel_file_path.open('wb') as mel_file:
                 pickle.dump(mel_sample, mel_file, protocol=pickle.HIGHEST_PROTOCOL)
+            lockfile.unlink(missing_ok=False)
         else:
             pass
 

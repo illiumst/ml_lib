@@ -13,7 +13,7 @@ class TorchMelDataset(Dataset):
         super(TorchMelDataset, self).__init__()
         self.sampling_rate = sampling_rate
         self.audio_file_len = audio_file_len
-        self.padding = AutoPadToShape((1, n_mels , sub_segment_len)) if auto_pad_to_shape else None
+        self.padding = AutoPadToShape((n_mels , sub_segment_len)) if auto_pad_to_shape else None
         self.path = Path(mel_path)
         self.sub_segment_len = sub_segment_len
         self.mel_hop_len = mel_hop_len
@@ -29,7 +29,7 @@ class TorchMelDataset(Dataset):
         with self.path.open('rb') as mel_file:
             mel_spec = pickle.load(mel_file, fix_imports=True)
         start = self.offsets[item]
-        snippet = mel_spec[:, : , start: start + self.sub_segment_len]
+        snippet = mel_spec[: , start: start + self.sub_segment_len]
         if self.transform:
             snippet = self.transform(snippet)
         if self.padding:

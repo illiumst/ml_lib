@@ -96,6 +96,7 @@ class Generator(ShapeMixin, nn.Module):
         super(Generator, self).__init__()
         assert filters, '"Filters" has to be a list of int.'
         assert filters, '"Filters" has to be a list of int.'
+        kernels = kernels if kernels else [3] * len(filters)
         assert len(filters) == len(kernels), '"Filters" and "Kernels" has to be of same length.'
 
         interpolations = interpolations or [2, 2, 2]

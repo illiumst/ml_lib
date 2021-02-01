@@ -3,6 +3,7 @@ from pathlib import Path
 
 from pytorch_lightning.loggers.base import LightningLoggerBase
 from pytorch_lightning.loggers.neptune import NeptuneLogger
+from neptune.api_exceptions import ProjectNotFound
 # noinspection PyUnresolvedReferences
 from pytorch_lightning.loggers.csv_logs import CSVLogger
 
@@ -71,7 +72,12 @@ class Logger(LightningLoggerBase, ABC):
                                     experiment_name=self.name,
                                     project_name=self.project_name,
                                     params=self.config.model_paramters)
-        self.neptunelogger = NeptuneLogger(**self._neptune_kwargs)
+        try:
+            self.neptunelogger = NeptuneLogger(**self._neptune_kwargs)
+        except ProjectNotFound as e:
+            print(f'The project "{self.project_name}"')
+            print(e)
+
         self.csvlogger = CSVLogger(**self._csvlogger_kwargs)
         self.log_config_as_ini()
 

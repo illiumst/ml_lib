@@ -20,7 +20,7 @@ class _AudioToMelDataset(Dataset, ABC):
     def sampling_rate(self):
         raise NotImplementedError
 
-    def __init__(self, audio_file_path, label, sample_segment_len=1, sample_hop_len=1, reset=False,
+    def __init__(self, audio_file_path, label, sample_segment_len=0, sample_hop_len=0, reset=False,
                  audio_augmentations=None, mel_augmentations=None, mel_kwargs=None, **kwargs):
         self.ignored_kwargs = kwargs
         self.mel_kwargs = mel_kwargs
@@ -46,7 +46,7 @@ class _AudioToMelDataset(Dataset, ABC):
             return self.dataset[item]
         except FileNotFoundError:
             assert self._build_mel()
-        return self.dataset[item]
+            return self.dataset[item]
 
     def __len__(self):
         return len(self.dataset)
@@ -78,7 +78,6 @@ class LibrosaAudioToMelDataset(_AudioToMelDataset):
         self._mel_transform = Compose([LibrosaAudioToMel(**mel_kwargs),
                                        MelToImage()
                                        ])
-
 
     def _build_mel(self):
         if self.reset:

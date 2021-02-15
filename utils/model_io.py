@@ -14,6 +14,10 @@ from torch import nn
 class ModelParameters(Namespace, Mapping):
 
     @property
+    def as_dict(self):
+        return {key: self.get(key) if key != 'activation' else self.activation_as_string for key in self.keys()}
+
+    @property
     def activation_as_string(self):
         return self['activation'].lower()
 
@@ -50,13 +54,7 @@ class ModelParameters(Namespace, Mapping):
         if name == 'activation':
             return self._activations[self['activation'].lower()]
         else:
-            try:
-                return super(ModelParameters, self).__getattribute__(name)
-            except AttributeError as e:
-                if name == 'stretch':
-                    return False
-                else:
-                    return None
+            return super(ModelParameters, self).__getattribute__(name)
 
     _activations = dict(
         leaky_relu=nn.LeakyReLU,
@@ -88,16 +86,20 @@ class SavedLightningModels(object):
             model = torch.load(models_root_path / 'model_class.obj')
         assert model is not None
 
-        return cls(weights=str(checkpoint_path), model=model)
+        return cls(weights=checkpoint_path, model=model)
 
     def __init__(self, **kwargs):
-        self.weights: str = kwargs.get('weights', '')
+        self.weights: Path = Path(kwargs.get('weights', ''))
+        self.hparams: Path = self.weights.parent / 'hparams.yaml'
 
         self.model = kwargs.get('model', None)
         assert self.model is not None
 
     def restore(self):
-        pretrained_model = self.model.load_from_checkpoint(self.weights)
+
+        pretrained_model = self.model.load_from_checkpoint(self.weights.__str__())
+        # , hparams_file=self.hparams.__str__())
         pretrained_model.eval()
         pretrained_model.freeze()
         return pretrained_model
+

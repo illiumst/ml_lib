@@ -1,12 +1,22 @@
 import importlib
+import inspect
 import pickle
 import shelve
+from argparse import ArgumentParser
+from ast import literal_eval
 from pathlib import Path, PurePath
 from typing import Union
 
 import numpy as np
 import torch
 import random
+
+
+def auto_cast(a):
+  try:
+    return literal_eval(a)
+  except:
+    return a
 
 
 def to_one_hot(idx_array, max_classes):
@@ -54,3 +64,20 @@ def locate_and_import_class(class_name, folder_path: Union[str, PurePath] = ''):
            continue
     raise AttributeError(f'Check the Model name. Possible model files are:\n{[x.name for x in module_paths]}')
 
+
+def add_argparse_args(cls, parent_parser):
+    parser = ArgumentParser(parents=[parent_parser], add_help=False)
+    full_arg_spec = inspect.getfullargspec(cls.__init__)
+    n_non_defaults = len(full_arg_spec.args) - (len(full_arg_spec.defaults) if full_arg_spec.defaults else 0)
+    for idx, argument in enumerate(full_arg_spec.args):
+        if argument == 'self':
+            continue
+        if idx < n_non_defaults:
+            parser.add_argument(f'--{argument}', type=int)
+        else:
+            argument_type = type(argument)
+            parser.add_argument(f'--{argument}',
+                                type=argument_type,
+                                default=full_arg_spec.defaults[idx - n_non_defaults]
+                                )
+    return parser

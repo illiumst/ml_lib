@@ -1,18 +1,33 @@
-from abc import ABC
+import inspect
+from argparse import ArgumentParser
 from pathlib import Path
 
+import os
 from pytorch_lightning.loggers.base import LightningLoggerBase
 from pytorch_lightning.loggers.neptune import NeptuneLogger
 from neptune.api_exceptions import ProjectNotFound
-# noinspection PyUnresolvedReferences
+
 from pytorch_lightning.loggers.csv_logs import CSVLogger
+from pytorch_lightning.utilities import argparse_utils
 
-from .config import Config
+from ml_lib.utils.tools import add_argparse_args
 
 
-class Logger(LightningLoggerBase, ABC):
+class Logger(LightningLoggerBase):
+
+    @classmethod
+    def from_argparse_args(cls, args, **kwargs):
+        return argparse_utils.from_argparse_args(cls, args, **kwargs)
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     media_dir = 'media'
+
+    @classmethod
+    def add_argparse_args(cls, parent_parser):
+        return add_argparse_args(cls, parent_parser)
 
     @property
     def experiment(self):
@@ -26,26 +41,22 @@ class Logger(LightningLoggerBase, ABC):
         return Path(self.csvlogger.experiment.log_dir)
 
     @property
-    def name(self):
-        return self.config.name
-
-    @property
     def project_name(self):
-        return f"{self.config.project.owner}/{self.config.project.name.replace('_', '-')}"
+        return f"{self.owner}/{self.name.replace('_', '-')}"
 
     @property
     def version(self):
-        return self.config.get('main', 'seed')
+        return self.seed
+
+    @property
+    def save_dir(self):
+        return self.log_dir
 
     @property
     def outpath(self):
-        return Path(self.config.train.outpath) / self.config.model.type
+        return Path(self.root_out) / self.model_name
 
-    @property
-    def exp_path(self):
-        return Path(self.outpath) / self.name
-
-    def __init__(self, config: Config):
+    def __init__(self, owner, neptune_key, model_name, project_name='', outpath='output', seed=69, debug=False):
         """
         params (dict|None): Optional. Parameters of the experiment. After experiment creation params are read-only.
            Parameters are displayed in the experiment’s Parameters section and each key-value pair can be
@@ -59,19 +70,19 @@ class Logger(LightningLoggerBase, ABC):
         """
         super(Logger, self).__init__()
 
-        self.config = config
-        self.debug = self.config.main.debug
-        if self.debug:
-            self.config.add_section('project')
-            self.config.set('project', 'owner', 'testuser')
-            self.config.set('project', 'name', 'test')
-            self.config.set('project', 'neptune_key', 'XXX')
+        self.debug = debug
+        self._name = project_name or Path(os.getcwd()).name if not self.debug else 'test'
+        self.owner = owner if not self.debug else 'testuser'
+        self.neptune_key = neptune_key if not self.debug else 'XXX'
+        self.root_out = outpath if not self.debug else 'debug_out'
+        self.seed = seed
+        self.model_name = model_name
+
         self._csvlogger_kwargs = dict(save_dir=self.outpath, version=self.version, name=self.name)
         self._neptune_kwargs = dict(offline_mode=self.debug,
-                                    api_key=self.config.project.neptune_key,
+                                    api_key=self.neptune_key,
                                     experiment_name=self.name,
-                                    project_name=self.project_name,
-                                    params=self.config.model_paramters)
+                                    project_name=self.project_name)
         try:
             self.neptunelogger = NeptuneLogger(**self._neptune_kwargs)
         except ProjectNotFound as e:
@@ -79,7 +90,6 @@ class Logger(LightningLoggerBase, ABC):
             print(e)
 
         self.csvlogger = CSVLogger(**self._csvlogger_kwargs)
-        self.log_config_as_ini()
 
     def log_hyperparams(self, params):
         self.neptunelogger.log_hyperparams(params)
@@ -95,19 +105,15 @@ class Logger(LightningLoggerBase, ABC):
         self.csvlogger.close()
         self.neptunelogger.close()
 
-    def log_config_as_ini(self):
-        self.config.write(self.log_dir / 'config.ini')
-
-    def log_text(self, name, text, step_nb=0, **_):
+    def log_text(self, name, text, **_):
         # TODO Implement Offline variant.
-        self.neptunelogger.log_text(name, text, step_nb)
+        self.neptunelogger.log_text(name, text)
 
     def log_metric(self, metric_name, metric_value, **kwargs):
         self.csvlogger.log_metrics(dict(metric_name=metric_value))
         self.neptunelogger.log_metric(metric_name, metric_value, **kwargs)
 
     def log_image(self, name, image, ext='png', **kwargs):
-
         step = kwargs.get('step', None)
         image_name = f'{step}_{name}' if step is not None else name
         image_path = self.log_dir / self.media_dir / f'{image_name}.{ext[1:] if ext.startswith(".") else ext}'

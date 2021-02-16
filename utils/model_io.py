@@ -31,6 +31,8 @@ class ModelParameters(Namespace, Mapping):
                 activation=self.__getattribute__('activation')
             )
         )
+        # Get rid of paramters that
+        paramter_mapping.__delitem__('in_shape')
 
         return paramter_mapping
 

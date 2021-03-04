@@ -22,8 +22,8 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 ###################
 class LinearModule(ShapeMixin, nn.Module):
 
-    def __init__(self, in_shape, out_features, bias=True, activation=None,
-                 norm=False, dropout: Union[int, float] = 0, **kwargs):
+    def __init__(self, in_shape, out_features, use_bias=True, activation=None,
+                 use_norm=False, dropout: Union[int, float] = 0, **kwargs):
         if list(kwargs.keys()):
             warnings.warn(f'The following arguments have been ignored: \n {list(kwargs.keys())}')
         super(LinearModule, self).__init__()
@@ -31,8 +31,8 @@ class LinearModule(ShapeMixin, nn.Module):
         self.in_shape = in_shape
         self.flat = Flatten(self.in_shape) if isinstance(self.in_shape, (tuple, list)) else F_x(in_shape)
         self.dropout = nn.Dropout(dropout) if dropout else F_x(self.flat.shape)
-        self.norm = nn.BatchNorm1d(self.flat.shape) if norm else F_x(self.flat.shape)
-        self.linear = nn.Linear(self.flat.shape, out_features, bias=bias)
+        self.norm = nn.LayerNorm(self.flat.shape) if use_norm else F_x(self.flat.shape)
+        self.linear = nn.Linear(self.flat.shape, out_features, bias=use_bias)
         self.activation = activation() if activation else F_x(self.linear.out_features)
 
     def forward(self, x):
@@ -47,13 +47,14 @@ class LinearModule(ShapeMixin, nn.Module):
 class ConvModule(ShapeMixin, nn.Module):
 
     def __init__(self, in_shape, conv_filters, conv_kernel, activation: nn.Module = nn.ELU, pooling_size=None,
-                 bias=True, norm=False, dropout: Union[int, float] = 0, trainable: bool = True,
+                 bias=True, use_norm=False, dropout: Union[int, float] = 0, trainable: bool = True,
                  conv_class=nn.Conv2d, conv_stride=1, conv_padding=0, **kwargs):
         super(ConvModule, self).__init__()
         assert isinstance(in_shape, (tuple, list)), f'"in_shape" should be a [list, tuple], but was {type(in_shape)}'
         assert len(in_shape) == 3, f'Length should be 3, but was {len(in_shape)}'
-        warnings.warn(f'The following arguments have been ignored: \n {list(kwargs.keys())}')
-        if norm and not trainable:
+        if len(kwargs.keys()):
+            warnings.warn(f'The following arguments have been ignored: \n {list(kwargs.keys())}')
+        if use_norm and not trainable:
             warnings.warn('You set this module to be not trainable but the running norm is active.\n' +
                           'We set it to "eval" mode.\n' +
                           'Keep this in mind if you do a finetunning or retraining step.'
@@ -72,9 +73,9 @@ class ConvModule(ShapeMixin, nn.Module):
 
         # Modules
         self.activation = activation() or F_x(None)
+        self.norm = nn.LayerNorm(self.in_shape, eps=1e-04) if use_norm else F_x(None)
         self.dropout = nn.Dropout2d(dropout) if dropout else F_x(None)
         self.pooling = nn.MaxPool2d(pooling_size) if pooling_size else F_x(None)
-        self.norm = nn.BatchNorm2d(in_channels, eps=1e-04) if norm else F_x(None)
         self.conv = conv_class(in_channels, self.conv_filters, self.conv_kernel, bias=bias,
                                padding=self.padding, stride=self.stride
                                )
@@ -134,7 +135,7 @@ class DeConvModule(ShapeMixin, nn.Module):
     def __init__(self, in_shape, conv_filters, conv_kernel, conv_stride=1, conv_padding=0,
                  dropout: Union[int, float] = 0, autopad=0,
                  activation: Union[None, nn.Module] = nn.ReLU, interpolation_scale=0,
-                 bias=True, norm=False, **kwargs):
+                 bias=True, use_norm=False, **kwargs):
         super(DeConvModule, self).__init__()
         warnings.warn(f'The following arguments have been ignored: \n {list(kwargs.keys())}')
         in_channels, height, width = in_shape[0], in_shape[1], in_shape[2]
@@ -146,7 +147,7 @@ class DeConvModule(ShapeMixin, nn.Module):
 
         self.autopad = AutoPad() if autopad else lambda x: x
         self.interpolation = Interpolate(scale_factor=interpolation_scale) if interpolation_scale else lambda x: x
-        self.norm = nn.BatchNorm2d(in_channels, eps=1e-04) if norm else F_x(self.in_shape)
+        self.norm = nn.LayerNorm(in_channels, eps=1e-04) if use_norm else F_x(self.in_shape)
         self.dropout = nn.Dropout2d(dropout) if dropout else F_x(self.in_shape)
         self.de_conv = nn.ConvTranspose2d(in_channels, self.conv_filters, self.conv_kernel, bias=bias,
                                           padding=self.padding, stride=self.stride)
@@ -166,14 +167,13 @@ class DeConvModule(ShapeMixin, nn.Module):
 
 class ResidualModule(ShapeMixin, nn.Module):
 
-    def __init__(self, in_shape, module_class, n, norm=False, **module_parameters):
+    def __init__(self, in_shape, module_class, n, use_norm=False, **module_parameters):
         assert n >= 1
         super(ResidualModule, self).__init__()
         self.in_shape = in_shape
         module_parameters.update(in_shape=in_shape)
-        if norm:
-            norm = nn.BatchNorm1d if len(self.in_shape) <= 2 else nn.BatchNorm2d
-            self.norm = norm(self.in_shape if isinstance(self.in_shape, int) else self.in_shape[0])
+        if use_norm:
+            self.norm = nn.LayerNorm(self.in_shape if isinstance(self.in_shape, int) else self.in_shape[0])
         else:
             self.norm = F_x(self.in_shape)
         self.activation = module_parameters.get('activation', None)
@@ -216,13 +216,14 @@ class RecurrentModule(ShapeMixin, nn.Module):
 
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout=0.):
+    def __init__(self, dim, hidden_dim, dropout=0., activation=nn.GELU):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(dim, hidden_dim),
-            nn.GELU(),
+            activation() or F_x(None),
             nn.Dropout(dropout),
             nn.Linear(hidden_dim, dim),
+            activation() or F_x(None),
             nn.Dropout(dropout)
         )
 
@@ -272,18 +273,20 @@ class Attention(nn.Module):
 
 class TransformerModule(ShapeMixin, nn.Module):
 
-    def __init__(self, in_shape, depth, heads, mlp_dim, dropout=None, use_norm=False, activation='gelu'):
+    def __init__(self, in_shape, depth, heads, mlp_dim, dropout=None, use_norm=False,
+                 activation=nn.GELU, use_residual=True):
         super(TransformerModule, self).__init__()
 
         self.in_shape = in_shape
+        self.use_residual = use_residual
 
         self.flat = Flatten(self.in_shape) if isinstance(self.in_shape, (tuple, list)) else F_x(in_shape)
 
-        self.layers = nn.ModuleList([])
         self.embedding_dim = self.flat.flat_shape
-        self.norm = nn.LayerNorm(self.embedding_dim)
+        self.norm = nn.LayerNorm(self.embedding_dim) if use_norm else F_x(self.embedding_dim)
         self.attns = nn.ModuleList([Attention(self.embedding_dim, heads=heads, dropout=dropout) for _ in range(depth)])
-        self.mlps = nn.ModuleList([FeedForward(self.embedding_dim, mlp_dim, dropout=dropout) for _ in range(depth)])
+        self.mlps = nn.ModuleList([FeedForward(self.embedding_dim, mlp_dim, dropout=dropout, activation=activation)
+                                   for _ in range(depth)])
 
     def forward(self, x, mask=None, return_attn_weights=False, **_):
         tensor = self.flat(x)
@@ -297,11 +300,11 @@ class TransformerModule(ShapeMixin, nn.Module):
                 attn_weights.append(attn_weight)
             else:
                 attn_tensor = attn(attn_tensor, mask=mask)
-            tensor = attn_tensor + tensor
+            tensor = tensor + attn_tensor if self.use_residual else attn_tensor
 
             # MLP
             mlp_tensor = self.norm(tensor)
             mlp_tensor = mlp(mlp_tensor)
-            tensor = tensor + mlp_tensor
+            tensor = tensor + mlp_tensor if self.use_residual else mlp_tensor
 
         return (tensor, attn_weights) if return_attn_weights else tensor

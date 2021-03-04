@@ -22,10 +22,12 @@ class TorchMelDataset(Dataset):
         self.mel_hop_len = int(mel_hop_len)
         self.sub_segment_hop_len = int(sub_segment_hop_len)
         self.n = int((self.sampling_rate / self.mel_hop_len) * self.audio_file_len + 1)
-        if self.sub_segment_len and self.sub_segment_hop_len:
+        if self.sub_segment_len and self.sub_segment_hop_len and (self.n - self.sub_segment_len) > 0:
             self.offsets = list(range(0, self.n - self.sub_segment_len, self.sub_segment_hop_len))
         else:
             self.offsets = [0]
+        if len(self) == 0:
+            print('what happend here')
         self.label = label
         self.transform = transform
 

@@ -9,7 +9,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from ml_lib.modules.util import LightningBaseModule
 from ml_lib.utils.config import Config
-from ml_lib.utils.logging import Logger
+from ml_lib.utils.loggers import Logger
 
 warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning)

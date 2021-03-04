@@ -2,7 +2,7 @@ import importlib
 import inspect
 import pickle
 import shelve
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentError
 from ast import literal_eval
 from pathlib import Path, PurePath
 from typing import Union
@@ -70,14 +70,17 @@ def add_argparse_args(cls, parent_parser):
     full_arg_spec = inspect.getfullargspec(cls.__init__)
     n_non_defaults = len(full_arg_spec.args) - (len(full_arg_spec.defaults) if full_arg_spec.defaults else 0)
     for idx, argument in enumerate(full_arg_spec.args):
-        if argument == 'self':
+        try:
+            if argument == 'self':
+                continue
+            if idx < n_non_defaults:
+                parser.add_argument(f'--{argument}', type=int)
+            else:
+                argument_type = type(argument)
+                parser.add_argument(f'--{argument}',
+                                    type=argument_type,
+                                    default=full_arg_spec.defaults[idx - n_non_defaults]
+                                    )
+        except ArgumentError:
             continue
-        if idx < n_non_defaults:
-            parser.add_argument(f'--{argument}', type=int)
-        else:
-            argument_type = type(argument)
-            parser.add_argument(f'--{argument}',
-                                type=argument_type,
-                                default=full_arg_spec.defaults[idx - n_non_defaults]
-                                )
     return parser

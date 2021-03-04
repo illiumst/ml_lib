@@ -183,10 +183,11 @@ class BaseCNNEncoder(ShapeMixin, nn.Module):
     # noinspection PyUnresolvedReferences
     def __init__(self, in_shape, lat_dim=256, use_bias=True, use_norm=False, dropout: Union[int, float] = 0,
                  latent_activation: Union[nn.Module, None] = None, activation: nn.Module = nn.ELU,
-                 filters: List[int] = None, kernels: List[int] = None, **kwargs):
+                 filters: List[int] = None, kernels: Union[List[int], int, None] = None, **kwargs):
         super(BaseCNNEncoder, self).__init__()
         assert filters, '"Filters" has to be a list of int'
-        assert kernels, '"Kernels" has to be a list of int'
+        kernels = kernels or [3] * len(filters)
+        kernels = kernels if not isinstance(kernels, int) else [kernels] * len(filters)
         assert len(kernels) == len(filters), 'Length of "Filters" and "Kernels" has to be same.'
 
         # Optional Padding for odd image-sizes

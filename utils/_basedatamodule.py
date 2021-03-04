@@ -25,5 +25,12 @@ class _BaseDataModule(LightningDataModule):
         self.datasets = dict()
 
     def transfer_batch_to_device(self, batch, device):
-        return batch.to(device)
-
+        if isinstance(batch, list):
+            for idx, item in enumerate(batch):
+                try:
+                    batch[idx] = item.to(device)
+                except (AttributeError, RuntimeError):
+                    continue
+            return batch
+        else:
+            return batch.to(device)

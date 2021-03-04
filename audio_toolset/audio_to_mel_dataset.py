@@ -60,7 +60,8 @@ class LibrosaAudioToMelDataset(Dataset):
             self.mel_file_path.unlink(missing_ok=True)
         if not self.mel_file_path.exists():
             self.mel_file_path.parent.mkdir(parents=True, exist_ok=True)
-            raw_sample, _ = librosa.core.load(self.audio_path, sr=self.sampling_rate)
+            with self.audio_path.open(mode='rb') as audio_file:
+                raw_sample, _ = librosa.core.load(audio_file, sr=self.sampling_rate)
             mel_sample = self._mel_transform(raw_sample)
             with self.mel_file_path.open('wb') as mel_file:
                 pickle.dump(mel_sample, mel_file, protocol=pickle.HIGHEST_PROTOCOL)

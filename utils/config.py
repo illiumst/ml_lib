@@ -26,6 +26,7 @@ def parse_comandline_args_add_defaults(filepath, overrides=None):
     parser = ArgumentParser()
     parser.add_argument('--model_name', type=str)
     parser.add_argument('--data_name', type=str)
+    parser.add_argument('--seed', type=str)
 
     # Load Defaults from _parameters.ini file
     config = configparser.ConfigParser()
@@ -46,9 +47,11 @@ def parse_comandline_args_add_defaults(filepath, overrides=None):
     overrides = overrides or dict()
     default_data = overrides.get('data_name', None) or new_defaults['data_name']
     default_model = overrides.get('model_name', None) or new_defaults['model_name']
+    default_seed = overrides.get('seed', None) or new_defaults['seed']
 
     data_name = args.__dict__.get('data_name', None) or default_data
     model_name = args.__dict__.get('model_name', None) or default_model
+    found_seed = args.__dict__.get('seed', None) or default_seed
 
     new_defaults.update({key: auto_cast(val) for key, val in config[model_name].items()})
 
@@ -72,7 +75,7 @@ def parse_comandline_args_add_defaults(filepath, overrides=None):
 
     if overrides is not None and isinstance(overrides, (Mapping, Dict)):
         args.update(**overrides)
-    return args, found_data_class, found_model_class
+    return args, found_data_class, found_model_class, found_seed
 
 
 def is_jsonable(x):

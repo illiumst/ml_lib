@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Union
 
 import torch
-from performer_pytorch import FastAttention
+
 from torch import nn
 from torch.nn import functional as F
 

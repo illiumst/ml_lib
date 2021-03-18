@@ -29,6 +29,7 @@ def fix_all_random_seeds(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
     random.seed(seed)
+    print(f'Seed is now fixed: "{seed}".')
 
 
 def write_to_shelve(file_path, value):

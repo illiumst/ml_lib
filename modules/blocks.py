@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Union
 
 import torch
+from performer_pytorch import FastAttention
 from torch import nn
 from torch.nn import functional as F
 
@@ -72,7 +73,7 @@ class ConvModule(ShapeMixin, nn.Module):
         self.conv_kernel = conv_kernel
 
         # Modules
-        self.activation = activation() or F_x(None)
+        self.activation = activation() or nn.Identity()
         self.norm = nn.LayerNorm(self.in_shape, eps=1e-04) if use_norm else F_x(None)
         self.dropout = nn.Dropout2d(dropout) if dropout else F_x(None)
         self.pooling = nn.MaxPool2d(pooling_size) if pooling_size else F_x(None)
@@ -232,16 +233,20 @@ class FeedForward(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads=8, dropout=0.):
+    def __init__(self, dim, heads=8, head_dim=64, dropout=0.):
         super().__init__()
-        self.heads = heads
-        self.scale = dim / heads ** -0.5
+        inner_dim = head_dim * heads
+        project_out = not (heads == 1 and head_dim == dim)
 
-        self.to_qkv = nn.Linear(dim, dim * 3, bias=False)
+        self.heads = heads
+        self.scale = head_dim ** -0.5
+
+        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias=False)
+
         self.to_out = nn.Sequential(
-            nn.Linear(dim, dim),
+            nn.Linear(inner_dim, dim),
             nn.Dropout(dropout)
-        )
+        ) if project_out else nn.Identity()
 
     def forward(self, x, mask=None, return_attn_weights=False):
         # noinspection PyTupleAssignmentBalance
@@ -251,9 +256,9 @@ class Attention(nn.Module):
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=h), qkv)
 
         dots = torch.einsum('bhid,bhjd->bhij', q, k) * self.scale
-        mask_value = -torch.finfo(dots.dtype).max
 
         if mask is not None:
+            mask_value = -torch.finfo(dots.dtype).max
             mask = F.pad(mask.flatten(1), (1, 0), value=True)
             assert mask.shape[-1] == dots.shape[-1], 'mask has incorrect dimensions'
             mask = mask[:, None, :] * mask[:, :, None]
@@ -273,7 +278,7 @@ class Attention(nn.Module):
 
 class TransformerModule(ShapeMixin, nn.Module):
 
-    def __init__(self, in_shape, depth, heads, mlp_dim, dropout=None, use_norm=False,
+    def __init__(self, in_shape, depth, heads, mlp_dim, head_dim=32, dropout=None, use_norm=False,
                  activation=nn.GELU, use_residual=True):
         super(TransformerModule, self).__init__()
 
@@ -283,8 +288,9 @@ class TransformerModule(ShapeMixin, nn.Module):
         self.flat = Flatten(self.in_shape) if isinstance(self.in_shape, (tuple, list)) else F_x(in_shape)
 
         self.embedding_dim = self.flat.flat_shape
-        self.norm = nn.LayerNorm(self.embedding_dim) if use_norm else F_x(self.embedding_dim)
-        self.attns = nn.ModuleList([Attention(self.embedding_dim, heads=heads, dropout=dropout) for _ in range(depth)])
+        self.norm = nn.LayerNorm(self.embedding_dim) if use_norm else F_x(None)
+        self.attns = nn.ModuleList([Attention(self.embedding_dim, heads=heads, dropout=dropout, head_dim=head_dim)
+                                    for _ in range(depth)])
         self.mlps = nn.ModuleList([FeedForward(self.embedding_dim, mlp_dim, dropout=dropout, activation=activation)
                                    for _ in range(depth)])
 

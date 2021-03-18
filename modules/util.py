@@ -207,14 +207,10 @@ class ShapeMixin:
             return shape
 
 
-class F_x(ShapeMixin, nn.Module):
+class F_x(ShapeMixin, nn.Identity):
     def __init__(self, in_shape):
         super(F_x, self).__init__()
         self.in_shape = in_shape
-
-    @staticmethod
-    def forward(x):
-        return x
 
 
 class SlidingWindow(ShapeMixin, nn.Module):

@@ -25,10 +25,10 @@ def to_one_hot(idx_array, max_classes):
     return one_hot
 
 
-def fix_all_random_seeds(config_obj):
-    np.random.seed(config_obj.main.seed)
-    torch.manual_seed(config_obj.main.seed)
-    random.seed(config_obj.main.seed)
+def fix_all_random_seeds(seed):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    random.seed(seed)
 
 
 def write_to_shelve(file_path, value):

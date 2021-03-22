@@ -35,8 +35,9 @@ try:
             # self.precision_recall_curve = pl.metrics.PrecisionRecallCurve(self.n_classes, compute_on_step=False)
             # self.average_prec = pl.metrics.AveragePrecision(self.n_classes, compute_on_step=True)
             # self.roc = pl.metrics.ROC(self.n_classes, compute_on_step=False)
-            self.fbeta = pl.metrics.FBeta(self.n_classes, average='macro', compute_on_step=False)
-            self.f1 = pl.metrics.F1(self.n_classes, average='macro', compute_on_step=False)
+            if self.n_classes > 2:
+                self.fbeta = pl.metrics.FBeta(self.n_classes, average='macro', compute_on_step=False)
+                self.f1 = pl.metrics.F1(self.n_classes, average='macro', compute_on_step=False)
 
         def __iter__(self):
             return iter(((name, metric) for name, metric in self._modules.items()))

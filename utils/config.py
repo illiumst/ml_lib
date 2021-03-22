@@ -71,10 +71,6 @@ def parse_comandline_args_add_defaults(filepath, overrides=None):
                 auto_lr_find=not args['debug'],
                 weights_summary='top',
                 check_val_every_n_epoch=1 if args['debug'] else args.get('check_val_every_n_epoch', 1),
-                limit_train_batches = 2.0,
-                limit_val_batches = 2.0,
-                limit_test_batches = 2.0,
-                limit_predict_batches = 2.0,
                 )
 
     if overrides is not None and isinstance(overrides, (Mapping, Dict)):

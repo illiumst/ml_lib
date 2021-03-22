@@ -2,7 +2,6 @@ from itertools import cycle
 
 import numpy as np
 import torch
-from pytorch_lightning.metrics import Recall
 from sklearn.metrics import f1_score, roc_curve, auc, roc_auc_score, ConfusionMatrixDisplay, confusion_matrix, \
     recall_score
 

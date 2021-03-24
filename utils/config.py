@@ -61,6 +61,9 @@ def parse_comandline_args_add_defaults(filepath, overrides=None):
     for module in [Logger, Trainer, found_data_class, found_model_class]:
         parser = module.add_argparse_args(parser)
 
+    # This is obsolete
+    # new_defaults.update(data_name=data_name, model_name=model_name)
+
     args, _ = parser.parse_known_args(namespace=Namespace(**new_defaults))
 
     args = vars(args)

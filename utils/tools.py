@@ -54,8 +54,12 @@ def check_path(file_path):
 
 def locate_and_import_class(class_name, folder_path: Union[str, PurePath] = ''):
     """Locate an object by name or dotted path, importing as necessary."""
+    import sys
+    sys.path.append("..")
     folder_path = Path(folder_path)
     module_paths = [x for x in folder_path.rglob('*.py') if x.is_file() and '__init__' not in x.name]
+    # possible_package_path = folder_path / '__init__.py'
+    # package = str(possible_package_path) if possible_package_path.exists() else None
     for module_path in module_paths:
         mod = importlib.import_module('.'.join([x.replace('.py', '') for x in module_path.parts]))
         try:

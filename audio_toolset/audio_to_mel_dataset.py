@@ -34,10 +34,10 @@ class LibrosaAudioToMelDataset(Dataset):
         self.audio_path = Path(audio_file_path)
 
         mel_folder_suffix = self.audio_path.parent.parent.name
+        self.mel_folder = Path(str(self.audio_path)
+                               .replace(mel_folder_suffix, f'{mel_folder_suffix}_mel_folder')).parent.parent
 
-        self.mel_file_path = Path(str(self.audio_path)
-                                  .replace(mel_folder_suffix, f'{mel_folder_suffix}_mel_folder')
-                                  .replace(self.audio_path.suffix, '.npy'))
+        self.mel_file_path = self.mel_folder / f'{self.audio_path.stem}.npy'
 
         self.audio_augmentations = audio_augmentations
 
@@ -45,7 +45,7 @@ class LibrosaAudioToMelDataset(Dataset):
                                        self.audio_file_duration, mel_kwargs['sr'], mel_kwargs['hop_length'],
                                        mel_kwargs['n_mels'], transform=mel_augmentations)
 
-        self._mel_transform = Compose([LibrosaAudioToMel(**mel_kwargs),
+        self._mel_transform = Compose([LibrosaAudioToMel(power_to_db=False, **mel_kwargs),
                                        MelToImage()
                                        ])
 

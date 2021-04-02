@@ -14,6 +14,8 @@ from sklearn.metrics import ConfusionMatrixDisplay
 
 # Utility - Modules
 ###################
+from ..metrics.binary_class_classifictaion import BinaryScores
+from ..metrics.multi_class_classification import MultiClassScores
 from ..utils.model_io import ModelParameters
 from ..utils.tools import add_argparse_args
 
@@ -133,9 +135,6 @@ try:
         def size(self):
             return self.shape
 
-        def additional_scores(self, outputs):
-            raise NotImplementedError
-
         def save_to_disk(self, model_path):
             Path(model_path, exist_ok=True).mkdir(parents=True, exist_ok=True)
             if not (model_path / 'model_class.obj').exists():
@@ -173,6 +172,12 @@ try:
             assert callable(self._weight_init)
             weight_initializer = WeightInit(in_place_init_function=self._weight_init)
             self.apply(weight_initializer)
+
+        def additional_scores(self, outputs):
+            if self.params.n_classes > 2:
+                return MultiClassScores(self)(outputs)
+            else:
+                return BinaryScores(self)(outputs)
 
     module_types = (LightningBaseModule, nn.Module,)
 

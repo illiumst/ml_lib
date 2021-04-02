@@ -37,12 +37,6 @@ def parse_comandline_args_add_defaults(filepath, overrides=None):
         defaults = config[key]
         new_defaults.update({key: auto_cast(val) for key, val in defaults.items()})
 
-    if new_defaults['debug']:
-        new_defaults.update(
-            max_epochs=2,
-            max_steps=2     # The seems to be the new "fast_dev_run"
-        )
-
     args, _ = parser.parse_known_args()
     overrides = overrides or dict()
     default_data = overrides.get('data_name', None) or new_defaults['data_name']
@@ -71,13 +65,20 @@ def parse_comandline_args_add_defaults(filepath, overrides=None):
     args.update(gpus=[0] if torch.cuda.is_available() and not args['debug'] else None,
                 row_log_interval=1000,  # TODO: Better Value / Setting
                 log_save_interval=10000,  # TODO: Better Value / Setting
-                auto_lr_find=not args['debug'],
                 weights_summary='top',
-                check_val_every_n_epoch=1 if args['debug'] else args.get('check_val_every_n_epoch', 1),
                 )
 
     if overrides is not None and isinstance(overrides, (Mapping, Dict)):
         args.update(**overrides)
+    if args['debug']:
+        args.update(
+            # The seems to be the new "fast_dev_run"
+            val_check_interval=1,
+            max_epochs=2,
+            max_steps=2,
+            auto_lr_find=False,
+            check_val_every_n_epoch=1
+        )
     return args, found_data_class, found_model_class, found_seed
 
 

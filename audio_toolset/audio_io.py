@@ -52,6 +52,10 @@ class NormalizeLocal(object):
         return f'{self.__class__.__name__}({self.__dict__})'
 
     def __call__(self, x: np.ndarray):
+
+        x[np.isnan(x)] = 0
+        x[np.isinf(x)] = 0
+
         mean = x.mean()
         std = x.std() + 0.0001
 

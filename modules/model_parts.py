@@ -190,10 +190,6 @@ class BaseCNNEncoder(ShapeMixin, nn.Module):
         kernels = kernels if not isinstance(kernels, int) else [kernels] * len(filters)
         assert len(kernels) == len(filters), 'Length of "Filters" and "Kernels" has to be same.'
 
-        # Optional Padding for odd image-sizes
-        # Obsolet, cdan be done by autopadding module on incoming tensors
-        # in_shape = [tensor+1 if tensor % 2 != 0 and idx else tensor for idx, tensor in enumerate(in_shape)]
-
         # Parameters
         self.lat_dim = lat_dim
         self.in_shape = in_shape

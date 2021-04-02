@@ -1,3 +1,4 @@
+import torch
 from pytorch_lightning import Callback, Trainer, LightningModule
 
 
@@ -16,6 +17,10 @@ class BestScoresCallback(Callback):
         for monitor in self.best_scores.keys():
             current_score = trainer.callback_metrics.get(monitor)
             if current_score is None:
+                pass
+            elif torch.isinf(current_score):
+                pass
+            elif torch.isnan(current_score):
                 pass
             else:
                 self.best_scores[monitor] = max(self.best_scores[monitor], current_score)

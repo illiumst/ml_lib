@@ -67,7 +67,7 @@ def locate_and_import_class(class_name, folder_path: Union[str, PurePath] = ''):
             return model_class
         except AttributeError:
            continue
-    raise AttributeError(f'Check the Model name. Possible model files are:\n{[x.name for x in module_paths]}')
+    raise AttributeError(f'Check the {folder_path.name} name. Possible files are:\n{[x.name for x in module_paths]}')
 
 
 def add_argparse_args(cls, parent_parser):

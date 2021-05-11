@@ -129,8 +129,10 @@ try:
             self._weight_init = weight_init
             self.params = ModelParameters(model_parameters)
 
-            self.metrics = PLMetrics(self.params.n_classes, tag='PL')
-            pass
+            if hasattr(self.params, 'n_classes'):
+                self.metrics = PLMetrics(self.params.n_classes, tag='PL')
+            else:
+                pass
 
         def size(self):
             return self.shape

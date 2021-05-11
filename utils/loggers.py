@@ -1,3 +1,5 @@
+import inspect
+from argparse import ArgumentParser
 from copy import deepcopy
 
 import hashlib
@@ -5,8 +7,9 @@ from pathlib import Path
 
 import os
 from pytorch_lightning.loggers.base import LightningLoggerBase
-from pytorch_lightning.loggers.neptune import NeptuneLogger
 from neptune.api_exceptions import ProjectNotFound
+
+from pytorch_lightning.loggers.neptune import NeptuneLogger
 
 from pytorch_lightning.loggers.csv_logs import CSVLogger
 from pytorch_lightning.utilities import argparse_utils
@@ -14,7 +17,7 @@ from pytorch_lightning.utilities import argparse_utils
 from ml_lib.utils.tools import add_argparse_args
 
 
-class Logger(LightningLoggerBase):
+class LightningLogger(LightningLoggerBase):
 
     @classmethod
     def from_argparse_args(cls, args, **kwargs):
@@ -97,7 +100,7 @@ class Logger(LightningLoggerBase):
            They are editable after experiment is created (see: append_tag() and remove_tag()).
            Tags are displayed in the experiment’s Details and can be viewed in experiments view as a column.
         """
-        super(Logger, self).__init__()
+        super(LightningLogger, self).__init__()
 
         self.debug = debug
         self.owner = owner if not self.debug else 'testuser'

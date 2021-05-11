@@ -1,5 +1,6 @@
 import ast
 import configparser
+from distutils.util import strtobool
 from pathlib import Path
 from typing import Mapping, Dict
 
@@ -14,7 +15,7 @@ from configparser import ConfigParser, DuplicateSectionError
 import hashlib
 from pytorch_lightning import Trainer
 
-from ml_lib.utils.loggers import Logger
+from ml_lib.utils.loggers import LightningLogger
 from ml_lib.utils.tools import locate_and_import_class, auto_cast
 
 
@@ -27,6 +28,7 @@ def parse_comandline_args_add_defaults(filepath, overrides=None):
     parser.add_argument('--model_name', type=str)
     parser.add_argument('--data_name', type=str)
     parser.add_argument('--seed', type=str)
+    parser.add_argument('--debug', type=strtobool)
 
     # Load Defaults from _parameters.ini file
     config = configparser.ConfigParser()
@@ -52,11 +54,8 @@ def parse_comandline_args_add_defaults(filepath, overrides=None):
     found_data_class = locate_and_import_class(data_name, 'datasets')
     found_model_class = locate_and_import_class(model_name, 'models')
 
-    for module in [Logger, Trainer, found_data_class, found_model_class]:
+    for module in [LightningLogger, Trainer, found_data_class, found_model_class]:
         parser = module.add_argparse_args(parser)
-
-    # This is obsolete
-    # new_defaults.update(data_name=data_name, model_name=model_name)
 
     args, _ = parser.parse_known_args(namespace=Namespace(**new_defaults))
 
